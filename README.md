@@ -2,7 +2,7 @@
 
 ## Quick Start
 ```bash
-git clone <repository>
+git clone https://github.com/kng1259/SArch-IntelliLearn-251
 cd SArch-IntelliLearn-251
 cp learningservice/.env.example learningservice/.env
 cp teachingservice/.env.example teachingservice/.env
