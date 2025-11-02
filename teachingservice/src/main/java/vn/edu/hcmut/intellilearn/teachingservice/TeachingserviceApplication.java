@@ -1,0 +1,13 @@
+package vn.edu.hcmut.intellilearn.teachingservice;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class TeachingserviceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(TeachingserviceApplication.class, args);
+	}
+
+}
