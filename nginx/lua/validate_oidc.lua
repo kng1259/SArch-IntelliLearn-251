@@ -1,10 +1,6 @@
--- Validates bearer access token using lua-resty-openidc (JWKS signature check).
--- On success: sets upstream headers containing user info / roles and allows request to continue.
--- On failure: returns 401 with JSON error.
-
+local cfg = require "oidc_config"
 local cjson = require "cjson.safe"
 local openidc = require "resty.openidc"
-local cfg = require "oidc_config"
 local opts = cfg.opts
 
 -- verify bearer token (RS256 JWT) locally using discovery/JWKS

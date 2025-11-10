@@ -1,7 +1,7 @@
 FROM openresty/openresty:alpine
 
 # Install build tools and luarocks (only for installing non-OpenResty rocks)
-RUN apk add --no-cache build-base git openssl-dev pcre-dev zlib-dev luajit-dev luarocks
+RUN apk add --no-cache build-base git openssl-dev pcre-dev zlib-dev lua5.1 lua5.1-dev luarocks perl
 
 # Use opm (bundled with OpenResty) to install OpenResty-specific modules
 # This installs lua-resty-openidc and its OpenResty-style dependencies into OpenResty's lualib

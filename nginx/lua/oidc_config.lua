@@ -13,19 +13,18 @@ local function split_csv(s)
   return out
 end
 
-local discovery = os.getenv("OIDC_DISCOVERY")
-local client_id = os.getenv("OIDC_CLIENT_ID")
-local aud_csv = os.getenv("OIDC_ACCEPTED_AUDIENCES")
-local ssl_verify_env = os.getenv("OIDC_SSL_VERIFY")
+local discovery = "http://keycloak:8080/realms/intellilearn/.well-known/openid-configuration"
+local client_id = "nginx"
+local aud_csv = "nginx"
 
 local opts = {
   discovery = discovery,
   client_id = client_id,
+--   jwks_uri = "http://keycloak:8080/realms/intellilearn/protocol/openid-connect/certs",
   -- for validating access tokens signed with RS256, no client_secret required
   -- cache settings (lua_shared_dict names)
-  discovery_cache = "oidc_cache",
   jwks_cache = "jwks_cache",
-  ssl_verify = (ssl_verify_env == nil) and true or (ssl_verify_env:lower() ~= "false"),
+  ssl_verify = false,
   -- accepted audiences: if set, openidc will ensure token aud matches at least one item
   accepted_audiences = split_csv(aud_csv),
   -- optionally tune timeouts / HTTP settings via http_opts
