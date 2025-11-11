@@ -18,15 +18,14 @@ local client_id = "nginx"
 local aud_csv = "nginx"
 
 local opts = {
-  discovery = discovery,
+  discovery = {
+    jwks_uri = "http://keycloak:8080/realms/intellilearn/protocol/openid-connect/certs",
+  },
   client_id = client_id,
---   jwks_uri = "http://keycloak:8080/realms/intellilearn/protocol/openid-connect/certs",
   -- for validating access tokens signed with RS256, no client_secret required
   -- cache settings (lua_shared_dict names)
   jwks_cache = "jwks_cache",
-  ssl_verify = false,
-  -- accepted audiences: if set, openidc will ensure token aud matches at least one item
-  accepted_audiences = split_csv(aud_csv),
+  ssl_verify = "no",
   -- optionally tune timeouts / HTTP settings via http_opts
   http_opts = {
     timeout = 5000

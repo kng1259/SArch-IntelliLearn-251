@@ -78,10 +78,9 @@ services:
       KC_DB_USERNAME: admin
       KC_DB_PASSWORD: admin
       KC_HEALTH_ENABLED: true
-      KC_HOSTNAME: keycloak
+      KC_HOSTNAME: localhost
       KC_HOSTNAME_STRICT: 'true'
       KC_HOSTNAME_STRICT_HTTPS: 'false'
-      KC_FEATURES: "scripts"
     command: start-dev --import-realm
     volumes:
       - ./keycloak/intellilearn-realm.json:/opt/keycloak/data/import/intellilearn-realm.json
@@ -125,8 +124,7 @@ services:
     environment:
       OIDC_DISCOVERY: "http://keycloak:8080/realms/intellilearn/.well-known/openid-configuration"
       OIDC_CLIENT_ID: "nginx"
-      OIDC_ACCEPTED_AUDIENCES: "nginx"
-      OIDC_SSL_VERIFY: "false"
+      OIDC_SSL_VERIFY: "no"
     volumes:
       - ./nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
       - ./nginx/lua:/usr/local/openresty/lualib/app:ro 
