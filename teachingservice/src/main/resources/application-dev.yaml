@@ -3,15 +3,15 @@ spring:
     name: teachingservice
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
     show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/its
-    username: admin
-    password: admin
+    url: jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
   security:
     user:
       name: admin
@@ -22,7 +22,8 @@ management:
     web:
       exposure:
         include: health,info
+
 server:
-  port: 28080
+  port: 8080
   servlet:
     context-path: /api/v1

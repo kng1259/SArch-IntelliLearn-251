@@ -1,7 +1,24 @@
-local cfg = require "oidc_config"
 local cjson = require "cjson.safe"
 local openidc = require "resty.openidc"
-local opts = cfg.opts
+
+local jwks_uri = os.getenv("OIDC_JWKS_URI")
+local client_id = os.getenv("OIDC_CLIENT_ID")
+local ssl_verify = os.getenv("OIDC_SSL_VERIFY") or "no"
+
+local opts = {
+  discovery = {
+    jwks_uri = jwks_uri,
+  },
+  client_id = client_id,
+  -- for validating access tokens signed with RS256, no client_secret required
+  -- cache settings (lua_shared_dict names)
+  jwks_cache = "jwks_cache",
+  ssl_verify = ssl_verify,
+  -- optionally tune timeouts / HTTP settings via http_opts
+  http_opts = {
+    timeout = 5000
+  }
+}
 
 -- verify bearer token (RS256 JWT) locally using discovery/JWKS
 local res, err = openidc.bearer_jwt_verify(opts)
@@ -36,8 +53,4 @@ ngx.req.set_header("X-Remote-User", preferred_username)
 ngx.req.set_header("X-Remote-Sub", sub)
 ngx.req.set_header("X-Remote-Roles", roles)
 
--- Optionally add full claims (beware of size/leak):
--- ngx.req.set_header("X-Remote-Claims", cjson.encode(res))
-
--- allow request to proceed
 return
