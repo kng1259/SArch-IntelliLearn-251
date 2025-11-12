@@ -1,6 +1,7 @@
 ### URL
-OpenAPI Docs Learning Service: "http://127.0.0.1:8081/api/v1/swagger-ui/index.html"
-OpenAPI Docs Teaching Service: "http://127.0.0.1:8082/api/v1/swagger-ui/index.html"
+- OpenAPI Docs Learning Service: "http://127.0.0.1:8081/api/v1/swagger-ui/index.html"
+- OpenAPI Docs Teaching Service: "http://127.0.0.1:8082/api/v1/swagger-ui/index.html"
+
 ***Notes: 
 - Mở API Docs có nút "Authorization" ở góc trên bên phải. Nhấn vào nút đó và nhập thông tin tài khoản vào ô "Name" tương ứng.
 - Tuy nhiên, khi gọi thông qua API Gateway thì phải truyền Access Token trong "Authorization" header kiểu Bearer
