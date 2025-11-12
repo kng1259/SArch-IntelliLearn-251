@@ -4,7 +4,8 @@
 
 ***Notes***: 
 - Mở API Docs có nút "Authorization" ở góc trên bên phải. Nhấn vào nút đó và nhập thông tin tài khoản vào ô "Name" tương ứng.
-- Tuy nhiên, khi gọi thông qua API Gateway thì phải truyền Access Token trong "Authorization" header kiểu Bearer
+- Tuy nhiên, khi gọi thông qua API Gateway thì phải truyền Access Token trong "Authorization" header kiểu Bearer.
+- Các API có thể sử dụng và API mẫu cho Security trong file ./keycloak-rest-api.json. Import file này vào Postman để chạy và kiểm thử.
 - Các token bên dưới có thể sử dụng để hardcode vì thời gian hết hạn lâu.
 
 ---
