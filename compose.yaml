@@ -122,7 +122,6 @@ services:
       - main_network
 
   nginx:
-    # image: nginx:latest
     build:
       context: nginx
     ports:
