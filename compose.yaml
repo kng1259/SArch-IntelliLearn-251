@@ -28,11 +28,14 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_HOST=postgres
-      - HIBERNATE_DDL_AUTO=update
       - DATABASE_PORT=5432
       - DATABASE_NAME=its
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - KEYCLOAK_SERVER_URL=http://keycloak:8080/
+      - KEYCLOAK_REALM=intellilearn
+      - KEYCLOAK_CLIENT_ID=nginx
+      - KEYCLOAK_CLIENT_SECRET=w5upehqrRr3xTL57IRAX0Vn5U6zGitbr
     healthcheck:
       test:
         [
@@ -55,11 +58,14 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_HOST=postgres
-      - HIBERNATE_DDL_AUTO=update
       - DATABASE_PORT=5432
       - DATABASE_NAME=its
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
+      - KEYCLOAK_SERVER_URL=http://keycloak:8080/
+      - KEYCLOAK_REALM=intellilearn
+      - KEYCLOAK_CLIENT_ID=nginx
+      - KEYCLOAK_CLIENT_SECRET=w5upehqrRr3xTL57IRAX0Vn5U6zGitbr
     healthcheck:
       test:
         [

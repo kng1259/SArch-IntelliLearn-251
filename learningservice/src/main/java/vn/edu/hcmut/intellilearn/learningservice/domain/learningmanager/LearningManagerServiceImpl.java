@@ -6,5 +6,5 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 class LearningManagerServiceImpl implements LearningManagerService {
-
+    private final LearningManagerCourseRepository courseRepository;
 }
