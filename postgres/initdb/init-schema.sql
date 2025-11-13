@@ -5,50 +5,19 @@
 -- DBMS: PostgreSQL 17
 -- Description: Complete schema for the IntelliLearn Learning Management System
 -- Based on: docs/mapping-eerd.md
+-- Notes:
+--   - User management (admin, tutor, student) handled by Keycloak
+--   - Using UUID for all primary keys
 -- ============================================================================
 
 -- Connect to the its database
 \c its;
 
--- ============================================================================
--- 1. USER MANAGEMENT TABLES
--- ============================================================================
-
--- Table: ADMIN
--- Description: System administrators with full access privileges
-CREATE TABLE IF NOT EXISTS admin (
-    admin_id SERIAL PRIMARY KEY,
-    username VARCHAR(100) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Table: TUTOR
--- Description: Instructors who create and manage courses
-CREATE TABLE IF NOT EXISTS tutor (
-    tutor_id SERIAL PRIMARY KEY,
-    username VARCHAR(100) NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Table: STUDENT
--- Description: Learners who enroll in courses and complete assessments
-CREATE TABLE IF NOT EXISTS student (
-    student_id SERIAL PRIMARY KEY,
-    username VARCHAR(100) NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================================
--- 2. COURSE STRUCTURE TABLES
+-- 1. COURSE STRUCTURE TABLES
 -- ============================================================================
 
 -- Table: LEVEL
@@ -63,20 +32,20 @@ CREATE TABLE IF NOT EXISTS level (
 -- Table: COURSE
 -- Description: Main course entity containing all learning materials and assessments
 CREATE TABLE IF NOT EXISTS course (
-    course_id SERIAL PRIMARY KEY,
+    course_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     start_at TIMESTAMP,
     end_at TIMESTAMP,
-    tutor_id INTEGER NOT NULL
+    tutor_id UUID NOT NULL
 );
 
 -- Table: ENROLLMENT
 -- Description: Junction table for student-course many-to-many relationship
 CREATE TABLE IF NOT EXISTS enrollment (
-    student_id INTEGER NOT NULL,
-    course_id INTEGER NOT NULL,
+    student_id UUID NOT NULL,
+    course_id UUID NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(50) DEFAULT 'active',
     PRIMARY KEY (student_id, course_id)
@@ -85,14 +54,14 @@ CREATE TABLE IF NOT EXISTS enrollment (
 -- Table: MATERIAL
 -- Description: Learning materials within a course (videos, documents, etc.)
 CREATE TABLE IF NOT EXISTS material (
-    material_id SERIAL PRIMARY KEY,
+    material_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     content TEXT,
     content_type VARCHAR(100),
     file_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    course_id INTEGER NOT NULL
+    course_id UUID NOT NULL
 );
 
 -- ============================================================================
@@ -102,7 +71,7 @@ CREATE TABLE IF NOT EXISTS material (
 -- Table: ASSIGNMENT
 -- Description: Course assignments that students must complete
 CREATE TABLE IF NOT EXISTS assignment (
-    assignment_id SERIAL PRIMARY KEY,
+    assignment_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     description TEXT,
     instruction TEXT,
@@ -111,13 +80,13 @@ CREATE TABLE IF NOT EXISTS assignment (
     end_at TIMESTAMP,
     grading_guidelines TEXT,
     max_score DECIMAL(5,2),
-    course_id INTEGER NOT NULL
+    course_id UUID NOT NULL
 );
 
 -- Table: SUBMISSION
 -- Description: Student submissions for assignments
 CREATE TABLE IF NOT EXISTS submission (
-    submission_id SERIAL PRIMARY KEY,
+    submission_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     content TEXT,
     file_name VARCHAR(255),
     file_url TEXT,
@@ -125,8 +94,8 @@ CREATE TABLE IF NOT EXISTS submission (
     feedback TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    student_id INTEGER NOT NULL,
-    assignment_id INTEGER NOT NULL
+    student_id UUID NOT NULL,
+    assignment_id UUID NOT NULL
 );
 
 -- ============================================================================
@@ -136,7 +105,7 @@ CREATE TABLE IF NOT EXISTS submission (
 -- Table: TEST
 -- Description: Question bank/template containing questions and options
 CREATE TABLE IF NOT EXISTS test (
-    test_id SERIAL PRIMARY KEY,
+    test_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -148,21 +117,21 @@ CREATE TABLE IF NOT EXISTS test (
 -- Table: EXAM
 -- Description: Formal exams linked to courses (can be entrance exams)
 CREATE TABLE IF NOT EXISTS exam (
-    exam_id SERIAL PRIMARY KEY,
+    exam_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     entrance BOOLEAN DEFAULT FALSE,
-    course_id INTEGER NOT NULL,
+    course_id UUID NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Table: QUIZ
 -- Description: Quick assessments within a course, tied to difficulty level
 CREATE TABLE IF NOT EXISTS quiz (
-    quiz_id SERIAL PRIMARY KEY,
+    quiz_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255),
     description TEXT,
     duration INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    course_id INTEGER NOT NULL,
+    course_id UUID NOT NULL,
     level_codename VARCHAR(50) NOT NULL
 );
 
@@ -173,22 +142,22 @@ CREATE TABLE IF NOT EXISTS quiz (
 -- Table: QUESTION
 -- Description: Individual questions belonging to a test
 CREATE TABLE IF NOT EXISTS question (
-    question_id SERIAL PRIMARY KEY,
+    question_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     content TEXT NOT NULL,
     question_type VARCHAR(50) DEFAULT 'multiple_choice',
     points DECIMAL(5,2) DEFAULT 1.0,
-    test_id INTEGER,
+    test_id UUID,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Table: OPTION
 -- Description: Answer options for questions (template with correct answers)
 CREATE TABLE IF NOT EXISTS option (
-    option_id SERIAL PRIMARY KEY,
+    option_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     value TEXT NOT NULL,
     "order" INTEGER NOT NULL,
     correct BOOLEAN DEFAULT FALSE,
-    question_id INTEGER NOT NULL,
+    question_id UUID NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -199,44 +168,44 @@ CREATE TABLE IF NOT EXISTS option (
 -- Table: ATTEMPT
 -- Description: Student attempt at taking a quiz or test
 CREATE TABLE IF NOT EXISTS attempt (
-    attempt_id SERIAL PRIMARY KEY,
+    attempt_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     score DECIMAL(5,2),
     start_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_at TIMESTAMP,
     completed BOOLEAN DEFAULT FALSE,
-    student_id INTEGER NOT NULL,
-    quiz_id INTEGER,
-    test_id INTEGER
+    student_id UUID NOT NULL,
+    quiz_id UUID,
+    test_id UUID
 );
 
 -- Table: ANSWER
 -- Description: Student's answer to a specific question during an attempt
 CREATE TABLE IF NOT EXISTS answer (
-    answer_id SERIAL PRIMARY KEY,
+    answer_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     content TEXT,
     "order" INTEGER,
-    attempt_id INTEGER NOT NULL,
-    question_id INTEGER,
+    attempt_id UUID NOT NULL,
+    question_id UUID,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Table: CHOICE
 -- Description: Snapshot of options at the time of student's attempt
 CREATE TABLE IF NOT EXISTS choice (
-    choice_id SERIAL PRIMARY KEY,
+    choice_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     value TEXT NOT NULL,
     "order" INTEGER NOT NULL,
     correct BOOLEAN DEFAULT FALSE,
     selected BOOLEAN DEFAULT FALSE,
-    answer_id INTEGER NOT NULL,
+    answer_id UUID NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Table: ANSWER_CHOICE
 -- Description: Junction table for answer-choice many-to-many relationship
 CREATE TABLE IF NOT EXISTS answer_choice (
-    answer_id INTEGER NOT NULL,
-    choice_id INTEGER NOT NULL,
+    answer_id UUID NOT NULL,
+    choice_id UUID NOT NULL,
     PRIMARY KEY (answer_id, choice_id)
 );
 
@@ -247,36 +216,22 @@ CREATE TABLE IF NOT EXISTS answer_choice (
 -- Table: FEEDBACK
 -- Description: Communication between tutors and students about a course
 CREATE TABLE IF NOT EXISTS feedback (
-    feedback_id SERIAL PRIMARY KEY,
+    feedback_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    tutor_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
-    course_id INTEGER NOT NULL
+    tutor_id UUID NOT NULL,
+    student_id UUID NOT NULL,
+    course_id UUID NOT NULL
 );
 
 -- ============================================================================
--- 8. ADD UNIQUE CONSTRAINTS
+-- 8. ADD FOREIGN KEY CONSTRAINTS
 -- ============================================================================
 
-ALTER TABLE admin ADD CONSTRAINT uk_admin_username UNIQUE (username);
-ALTER TABLE tutor ADD CONSTRAINT uk_tutor_username UNIQUE (username);
-ALTER TABLE student ADD CONSTRAINT uk_student_username UNIQUE (username);
-
--- ============================================================================
--- 9. ADD FOREIGN KEY CONSTRAINTS
--- ============================================================================
-
--- Course foreign keys
-ALTER TABLE course
-    ADD CONSTRAINT fk_course_tutor
-    FOREIGN KEY (tutor_id) REFERENCES tutor(tutor_id) ON DELETE CASCADE;
+-- Note: tutor_id and student_id reference Keycloak user IDs (UUID)
+-- No foreign key constraints to Keycloak database
 
 -- Enrollment foreign keys
-ALTER TABLE enrollment
-    ADD CONSTRAINT fk_enrollment_student
-    FOREIGN KEY (student_id) REFERENCES student(student_id) ON DELETE CASCADE;
-
 ALTER TABLE enrollment
     ADD CONSTRAINT fk_enrollment_course
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE;
@@ -292,10 +247,6 @@ ALTER TABLE assignment
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE;
 
 -- Submission foreign keys
-ALTER TABLE submission
-    ADD CONSTRAINT fk_submission_student
-    FOREIGN KEY (student_id) REFERENCES student(student_id) ON DELETE CASCADE;
-
 ALTER TABLE submission
     ADD CONSTRAINT fk_submission_assignment
     FOREIGN KEY (assignment_id) REFERENCES assignment(assignment_id) ON DELETE CASCADE;
@@ -325,10 +276,6 @@ ALTER TABLE option
     FOREIGN KEY (question_id) REFERENCES question(question_id) ON DELETE CASCADE;
 
 -- Attempt foreign keys
-ALTER TABLE attempt
-    ADD CONSTRAINT fk_attempt_student
-    FOREIGN KEY (student_id) REFERENCES student(student_id) ON DELETE CASCADE;
-
 ALTER TABLE attempt
     ADD CONSTRAINT fk_attempt_quiz
     FOREIGN KEY (quiz_id) REFERENCES quiz(quiz_id) ON DELETE CASCADE;
@@ -362,19 +309,11 @@ ALTER TABLE answer_choice
 
 -- Feedback foreign keys
 ALTER TABLE feedback
-    ADD CONSTRAINT fk_feedback_tutor
-    FOREIGN KEY (tutor_id) REFERENCES tutor(tutor_id) ON DELETE CASCADE;
-
-ALTER TABLE feedback
-    ADD CONSTRAINT fk_feedback_student
-    FOREIGN KEY (student_id) REFERENCES student(student_id) ON DELETE CASCADE;
-
-ALTER TABLE feedback
     ADD CONSTRAINT fk_feedback_course
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE;
 
 -- ============================================================================
--- 10. ADD CHECK CONSTRAINTS
+-- 9. ADD CHECK CONSTRAINTS
 -- ============================================================================
 
 ALTER TABLE course
@@ -401,13 +340,8 @@ ALTER TABLE attempt
     CHECK (end_at IS NULL OR start_at <= end_at);
 
 -- ============================================================================
--- 11. CREATE INDEXES FOR PERFORMANCE OPTIMIZATION
+-- 10. CREATE INDEXES FOR PERFORMANCE OPTIMIZATION
 -- ============================================================================
-
--- User table indexes
-CREATE INDEX idx_admin_username ON admin(username);
-CREATE INDEX idx_tutor_username ON tutor(username);
-CREATE INDEX idx_student_username ON student(username);
 
 -- Course-related indexes
 CREATE INDEX idx_course_tutor ON course(tutor_id);
@@ -441,7 +375,7 @@ CREATE INDEX idx_feedback_student ON feedback(student_id);
 CREATE INDEX idx_feedback_course ON feedback(course_id);
 
 -- ============================================================================
--- 12. INSERT SAMPLE DATA (Optional - for development/testing)
+-- 11. INSERT SAMPLE DATA (Optional - for development/testing)
 -- ============================================================================
 
 -- Insert sample levels
@@ -453,7 +387,7 @@ INSERT INTO level (codename, name, description) VALUES
 ON CONFLICT (codename) DO NOTHING;
 
 -- ============================================================================
--- 13. CREATE FUNCTIONS AND TRIGGERS
+-- 12. CREATE FUNCTIONS AND TRIGGERS
 -- ============================================================================
 
 -- Function to update updated_at timestamp
@@ -465,19 +399,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Add triggers using ALTER TABLE equivalent approach
-CREATE TRIGGER update_admin_updated_at
-    BEFORE UPDATE ON admin
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_tutor_updated_at
-    BEFORE UPDATE ON tutor
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_student_updated_at
-    BEFORE UPDATE ON student
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+-- Add triggers
 CREATE TRIGGER update_material_updated_at
     BEFORE UPDATE ON material
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -487,12 +409,8 @@ CREATE TRIGGER update_submission_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
--- 14. ADD COMMENTS ON TABLES AND COLUMNS
+-- 13. ADD COMMENTS ON TABLES AND COLUMNS
 -- ============================================================================
-
-COMMENT ON TABLE admin IS 'System administrators with full access privileges';
-COMMENT ON TABLE tutor IS 'Instructors who create and manage courses';
-COMMENT ON TABLE student IS 'Learners who enroll in courses and complete assessments';
 COMMENT ON TABLE level IS 'Difficulty levels for quizzes';
 COMMENT ON TABLE course IS 'Main course entity containing learning materials and assessments';
 COMMENT ON TABLE enrollment IS 'Junction table for student-course enrollment';
@@ -511,7 +429,7 @@ COMMENT ON TABLE answer_choice IS 'Junction table for answer-choice relationship
 COMMENT ON TABLE feedback IS 'Communication between tutors and students about courses';
 
 -- ============================================================================
--- 15. GRANT PERMISSIONS
+-- 14. GRANT PERMISSIONS
 -- ============================================================================
 
 -- Grant permissions (adjust based on your user setup)
@@ -525,9 +443,14 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO admin;
 -- Display completion message
 DO $$
 BEGIN
+    RAISE NOTICE '========================================';
     RAISE NOTICE 'IntelliLearn database schema initialized successfully!';
-    RAISE NOTICE 'Total tables created: 19';
-    RAISE NOTICE 'Foreign keys: 20';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'Total tables created: 16';
+    RAISE NOTICE 'Foreign keys: 13';
     RAISE NOTICE 'Check constraints: 5';
-    RAISE NOTICE 'Triggers: 5';
+    RAISE NOTICE 'Triggers: 2';
+    RAISE NOTICE 'Using UUID for all primary keys';
+    RAISE NOTICE 'User management via Keycloak';
+    RAISE NOTICE '========================================';
 END $$;
