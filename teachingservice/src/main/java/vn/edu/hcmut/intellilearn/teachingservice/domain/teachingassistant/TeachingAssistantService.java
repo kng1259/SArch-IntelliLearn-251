@@ -3,6 +3,7 @@ package vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.CourseRequest;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.CourseResponse;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.FeedbackRequest;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.StudentResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,4 +13,5 @@ public interface TeachingAssistantService {
     public List<CourseResponse> retrieveTutorCourses (UUID tutorId);
     public CourseResponse updateCourse(UUID tutorId, UUID courseId,CourseRequest course);
     public FeedbackRequest createFeedback(UUID tutorId, FeedbackRequest feedbackRequest);
+    public List<StudentResponse> retrieveCourseStudents(UUID courseId);
 }

@@ -4,11 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.Course;
 import vn.edu.hcmut.intellilearn.teachingservice.core.Feedback;
+import vn.edu.hcmut.intellilearn.teachingservice.core.Student;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.CourseRequest;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.CourseResponse;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.FeedbackRequest;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.StudentResponse;
 import vn.edu.hcmut.intellilearn.utils.mapper.CourseMapper;
 import vn.edu.hcmut.intellilearn.utils.mapper.FeedbackMapper;
+import vn.edu.hcmut.intellilearn.utils.mapper.StudentMapper;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,8 +23,11 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
     private final TeachingAssistantCourseRepository courseRepository;
     private final TeachingAssistantFeedbackRepository feedbackRepository;
     private final TeachingAssistantEnrollmentRepository enrollmentRepository;
+    private final TeachingAssistantStudentRepository studentRepository;
+
     private final CourseMapper courseMapper;
     private final FeedbackMapper feedbackMapper;
+    private final StudentMapper studentMapper;
 
     @Override
     public CourseResponse createCourse(UUID tutorId, CourseRequest courseRequest) {
@@ -59,6 +65,14 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
         feedback.setCourse(existedCourse);
         feedbackRepository.insertFeedback(feedback);
         return feedbackRequest;
+    }
+
+    @Override
+    public List<StudentResponse> retrieveCourseStudents(UUID courseId){
+        List<Student> studentList = studentRepository.selectCourseStudents(courseId);
+        return studentList.stream().map(
+                studentMapper::toStudentResponse
+        ).toList();
     }
 
     private Course isCourseOwnedByTutor(UUID tutorId, UUID courseId){
