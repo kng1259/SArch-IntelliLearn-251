@@ -6,8 +6,6 @@ import vn.edu.hcmut.intellilearn.teachingservice.core.Course;
 import java.util.List;
 import java.util.UUID;
 
-public interface TeachingAssistantCourseRepository{
-    public Course insertCourse(UUID tutorId, Course course);
-    public List<Course> selectTutorCourses(UUID tutorId);
-    public Course updateCourse(Course course);
+public interface CourseRepository extends JpaRepository<Course, UUID> {
+    List<Course> findAllByTutorId(UUID tutorId);
 }

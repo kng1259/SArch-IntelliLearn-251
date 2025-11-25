@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -37,4 +39,15 @@ public class Course {
 
     @Column(name = "tutor_id", nullable = false)
     private UUID tutorId;
+
+    @OneToMany(mappedBy = "course", orphanRemoval = true)
+    private Set<Feedback> feedbacks = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "course", orphanRemoval = true)
+    private Set<Enrollment> enrollments = new LinkedHashSet<>();
+
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }
