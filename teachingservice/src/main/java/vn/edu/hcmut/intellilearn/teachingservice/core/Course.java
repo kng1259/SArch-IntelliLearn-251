@@ -46,6 +46,9 @@ public class Course {
     @OneToMany(mappedBy = "course", orphanRemoval = true)
     private Set<Enrollment> enrollments = new LinkedHashSet<>();
 
+    @OneToMany(mappedBy = "course", orphanRemoval = true)
+    private Set<Material> materials = new LinkedHashSet<>();
+
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();

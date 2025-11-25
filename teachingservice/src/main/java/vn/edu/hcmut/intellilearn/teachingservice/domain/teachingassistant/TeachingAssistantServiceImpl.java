@@ -4,13 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.Course;
 import vn.edu.hcmut.intellilearn.teachingservice.core.Feedback;
+import vn.edu.hcmut.intellilearn.teachingservice.core.Material;
 import vn.edu.hcmut.intellilearn.teachingservice.core.Student;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.CourseRequest;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.CourseResponse;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.FeedbackRequest;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.StudentResponse;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.*;
 import vn.edu.hcmut.intellilearn.utils.mapper.CourseMapper;
 import vn.edu.hcmut.intellilearn.utils.mapper.FeedbackMapper;
+import vn.edu.hcmut.intellilearn.utils.mapper.MaterialMapper;
 import vn.edu.hcmut.intellilearn.utils.mapper.StudentMapper;
 
 import java.util.List;
@@ -24,10 +23,12 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
     private final TeachingAssistantFeedbackRepository feedbackRepository;
     private final TeachingAssistantEnrollmentRepository enrollmentRepository;
     private final TeachingAssistantStudentRepository studentRepository;
+    private final TeachingAssistantMaterialRepository materialRepository;
 
     private final CourseMapper courseMapper;
     private final FeedbackMapper feedbackMapper;
     private final StudentMapper studentMapper;
+    private final MaterialMapper materialMapper;
 
     @Override
     public CourseResponse createCourse(UUID tutorId, CourseRequest courseRequest) {
@@ -73,6 +74,28 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
         return studentList.stream().map(
                 studentMapper::toStudentResponse
         ).toList();
+    }
+
+    @Override
+    public LearningMaterialResponse createLearningMaterial(UUID tutorId,  LearningMaterialRequest learningMaterialRequest) {
+        Course existedCourse = isCourseOwnedByTutor(tutorId, learningMaterialRequest.getCourseId());
+        if (existedCourse == null)
+            throw new IllegalArgumentException("Khóa học không tồn tại hoặc bạn không có quyền phản hồi khóa học này");
+        Material material = materialMapper.toMaterial(learningMaterialRequest);
+        material.setCourse(existedCourse);
+        materialRepository.insertLearningMaterial(material);
+
+        return materialMapper.toLearningMaterialResponse(material);
+    }
+
+    @Override
+    public void deleteLearningMaterial(UUID tutorId, UUID materialId) {
+        Material existedMaterial = materialRepository.getLearningMaterial(materialId);
+        Course existedCourse = isCourseOwnedByTutor(tutorId, existedMaterial.getCourse().getCourseId());
+        if (existedCourse == null)
+            throw new IllegalArgumentException("Khóa học không tồn tại hoặc bạn không có quyền phản hồi khóa học này");
+
+        materialRepository.deleteLearningMaterial(materialId);
     }
 
     private Course isCourseOwnedByTutor(UUID tutorId, UUID courseId){

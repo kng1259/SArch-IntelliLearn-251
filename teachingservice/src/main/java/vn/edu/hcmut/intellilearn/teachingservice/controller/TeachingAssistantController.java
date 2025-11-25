@@ -4,14 +4,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.hcmut.intellilearn.teachingservice.controller.datatype.ApiResponse;
 import vn.edu.hcmut.intellilearn.teachingservice.core.KeycloakPrincipal;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.TeachingAssistantService;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.CourseRequest;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.CourseResponse;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.FeedbackRequest;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.StudentResponse;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -76,5 +74,24 @@ public class TeachingAssistantController {
                 .build();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    @PostMapping("/learning-material")
+    public ApiResponse<LearningMaterialResponse> postLearningMaterial(@AuthenticationPrincipal KeycloakPrincipal principal, @Valid @RequestBody LearningMaterialRequest learningMaterialRequest){
+        var learningMaterial = teachingAssistantService.createLearningMaterial(principal.userId(), learningMaterialRequest);
+        return ApiResponse.<LearningMaterialResponse>builder()
+                .data(learningMaterial)
+                .success(true)
+                .message("Tạo tài liệu cho khóa học thành công")
+                .build();
+    }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    @DeleteMapping("/learning-material/{materialId}")
+    public ApiResponse<?> deleteLearningMaterial(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID materialId){
+        teachingAssistantService.deleteLearningMaterial(principal.userId(), materialId);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Xóa tài liệu thành công")
+                .build();
+    }
 }
