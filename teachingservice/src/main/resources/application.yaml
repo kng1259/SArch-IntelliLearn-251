@@ -10,8 +10,8 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   datasource:
     url: jdbc:postgresql://127.0.0.1:5432/its
-    username: admin
-    password: admin
+    username: postgres
+    password: 2210254
   security:
     user:
       name: admin
