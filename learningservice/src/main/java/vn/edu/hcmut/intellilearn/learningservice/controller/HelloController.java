@@ -1,11 +1,11 @@
 package vn.edu.hcmut.intellilearn.learningservice.controller;
 
+import vn.edu.hcmut.intellilearn.learningservice.core.KeycloakUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.keycloak.admin.client.Keycloak;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import vn.edu.hcmut.intellilearn.learningservice.core.KeycloakUserDetails;
 
 import java.security.Principal;
 
