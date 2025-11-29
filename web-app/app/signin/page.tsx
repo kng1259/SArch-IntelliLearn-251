@@ -3,22 +3,40 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import authService from '@/lib/services/authService';
 
 export default function SignIn() {
   const router = useRouter();
   const [role, setRole] = useState<'student' | 'tutor'>('tutor');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Add authentication logic here
-    
-    if (role === 'tutor') {
-      router.push('/tutor/dashboard');
-    } else {
-      // TODO: Redirect to student dashboard when ready
-      router.push('/student/dashboard');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Login with Keycloak
+      const userInfo = await authService.login(email, password);
+      
+      // Store user ID as tutorId if user is a tutor
+      if (authService.isTutor()) {
+        localStorage.setItem('tutorId', userInfo.sub);
+        router.push('/tutor/dashboard');
+      } else if (authService.isStudent()) {
+        localStorage.setItem('studentId', userInfo.sub);
+        router.push('/student/dashboard');
+      } else {
+        setError('No valid role assigned to this account');
+      }
+    } catch (err: any) {
+      console.error('Login failed:', err);
+      setError(err.message || 'Invalid email or password. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -42,6 +60,12 @@ export default function SignIn() {
             <h1 className="text-xl font-semibold text-[#111827] mb-1">Sign In</h1>
             <p className="text-[#6B7280] text-sm font-normal">Choose your role and enter your credentials</p>
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             {/* Role Selection */}
@@ -126,9 +150,10 @@ export default function SignIn() {
             {/* Sign In Button */}
             <button
               type="submit"
-              className="w-full bg-[#0F172A] text-white py-3 rounded-lg hover:bg-[#1E293B] hover:cursor-pointer transition-colors font-medium text-sm mb-4"
+              disabled={isLoading}
+              className="w-full bg-[#0F172A] text-white py-3 rounded-lg hover:bg-[#1E293B] hover:cursor-pointer transition-colors font-medium text-sm mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign in as {role === 'student' ? 'Student' : 'Tutor'}
+              {isLoading ? 'Signing in...' : `Sign in as ${role === 'student' ? 'Student' : 'Tutor'}`}
             </button>
 
             {/* Sign Up Link */}
@@ -142,9 +167,17 @@ export default function SignIn() {
         </div>
 
         {/* Demo Credentials Note */}
-        <p className="text-center text-xs text-[#9CA3AF] mt-5">
-          Demo credentials: Use any email/password combination
-        </p>
+        <div className="mt-5 p-4 bg-white rounded-lg border border-gray-200">
+          <p className="text-xs font-semibold text-gray-700 mb-2">Test Accounts:</p>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600">
+              <span className="font-medium">Tutor:</span> <span className="font-mono">tutor@gmail.com</span> / <span className="font-mono">tutor123</span>
+            </p>
+            <p className="text-xs text-gray-600">
+              <span className="font-medium">Student:</span> <span className="font-mono">student@gmail.com</span> / <span className="font-mono">student123</span>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

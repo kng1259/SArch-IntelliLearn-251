@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 interface ProvideFeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -8,15 +12,38 @@ interface ProvideFeedbackModalProps {
     progress: number;
     avgGrade: number;
   };
+  onSave?: (feedback: string) => void | Promise<void>;
 }
 
-export default function ProvideFeedbackModal({ isOpen, onClose, student }: ProvideFeedbackModalProps) {
+export default function ProvideFeedbackModal({ isOpen, onClose, student, onSave }: ProvideFeedbackModalProps) {
+  const [feedback, setFeedback] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
   if (!isOpen) return null;
 
-  const handleSubmit = () => {
-    // TODO: Submit feedback
-    console.log('Sending feedback to:', student.name);
-    onClose();
+  const handleSubmit = async () => {
+    if (!feedback.trim()) {
+      alert('Please enter feedback message');
+      return;
+    }
+
+    if (onSave) {
+      setIsSending(true);
+      try {
+        await onSave(feedback);
+        setFeedback('');
+        onClose();
+      } catch (error) {
+        console.error('Failed to send feedback:', error);
+      } finally {
+        setIsSending(false);
+      }
+    } else {
+      // Fallback if no onSave provided
+      console.log('Sending feedback to:', student.name, feedback);
+      setFeedback('');
+      onClose();
+    }
   };
 
   return (
@@ -67,6 +94,8 @@ export default function ProvideFeedbackModal({ isOpen, onClose, student }: Provi
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">Feedback Message</label>
             <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
               placeholder="Write your feedback here..."
               rows={6}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm placeholder:text-gray-500 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
@@ -84,9 +113,10 @@ export default function ProvideFeedbackModal({ isOpen, onClose, student }: Provi
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2.5 text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm"
+            disabled={isSending}
+            className="px-6 py-2.5 text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Send Feedback
+            {isSending ? 'Sending...' : 'Send Feedback'}
           </button>
         </div>
       </div>
