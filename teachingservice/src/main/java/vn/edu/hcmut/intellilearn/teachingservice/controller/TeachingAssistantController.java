@@ -2,6 +2,7 @@ package vn.edu.hcmut.intellilearn.teachingservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.parameters.P;
@@ -75,8 +76,8 @@ public class TeachingAssistantController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
-    @PostMapping("/learning-material")
-    public ApiResponse<LearningMaterialResponse> postLearningMaterial(@AuthenticationPrincipal KeycloakPrincipal principal, @Valid @RequestBody LearningMaterialRequest learningMaterialRequest){
+    @PostMapping(value="/learning-material", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<LearningMaterialResponse> postLearningMaterial(@AuthenticationPrincipal KeycloakPrincipal principal, @Valid LearningMaterialRequest learningMaterialRequest){
         var learningMaterial = teachingAssistantService.createLearningMaterial(principal.userId(), learningMaterialRequest);
         return ApiResponse.<LearningMaterialResponse>builder()
                 .data(learningMaterial)

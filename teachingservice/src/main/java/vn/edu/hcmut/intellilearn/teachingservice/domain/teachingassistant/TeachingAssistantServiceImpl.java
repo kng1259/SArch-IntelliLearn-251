@@ -6,6 +6,7 @@ import vn.edu.hcmut.intellilearn.teachingservice.core.Course;
 import vn.edu.hcmut.intellilearn.teachingservice.core.Feedback;
 import vn.edu.hcmut.intellilearn.teachingservice.core.Material;
 import vn.edu.hcmut.intellilearn.teachingservice.core.Student;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.minio.MinioService;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.*;
 import vn.edu.hcmut.intellilearn.utils.mapper.CourseMapper;
 import vn.edu.hcmut.intellilearn.utils.mapper.FeedbackMapper;
@@ -24,6 +25,8 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
     private final TeachingAssistantEnrollmentRepository enrollmentRepository;
     private final TeachingAssistantStudentRepository studentRepository;
     private final TeachingAssistantMaterialRepository materialRepository;
+
+    private final MinioService minioService;
 
     private final CourseMapper courseMapper;
     private final FeedbackMapper feedbackMapper;
@@ -81,8 +84,10 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
         Course existedCourse = isCourseOwnedByTutor(tutorId, learningMaterialRequest.getCourseId());
         if (existedCourse == null)
             throw new IllegalArgumentException("Khóa học không tồn tại hoặc bạn không có quyền phản hồi khóa học này");
+        var url = minioService.uploadFile(learningMaterialRequest.getContent());
         Material material = materialMapper.toMaterial(learningMaterialRequest);
         material.setCourse(existedCourse);
+        material.setContent(url);
         materialRepository.insertLearningMaterial(material);
 
         return materialMapper.toLearningMaterialResponse(material);

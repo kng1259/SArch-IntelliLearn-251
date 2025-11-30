@@ -8,6 +8,7 @@ import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.dataty
 
 @Mapper(componentModel = "spring")
 public interface MaterialMapper {
+    @Mapping(target="content", ignore = true)
     Material toMaterial(LearningMaterialRequest learningMaterialRequest);
     @Mapping(source = "course.courseId", target = "courseId")
     LearningMaterialResponse toLearningMaterialResponse(Material material);
