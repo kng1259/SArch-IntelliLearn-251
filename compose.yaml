@@ -4,6 +4,7 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
+      POSTGRES_DB: its
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
@@ -12,7 +13,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
       - ./postgres/initdb:/docker-entrypoint-initdb.d
     networks:
       - main_network
@@ -25,15 +26,21 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - learningservice/.env.example
     environment:
       - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=its
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+      - KEYCLOAK_SERVER_URL=http://keycloak:8080/
+      - KEYCLOAK_REALM=intellilearn
+      - KEYCLOAK_CLIENT_ID=nginx
+      - KEYCLOAK_CLIENT_SECRET=w5upehqrRr3xTL57IRAX0Vn5U6zGitbr
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget -q --spider http://localhost:8080/actuator/health || exit 1",
+          "wget -q --spider http://localhost:8080/api/v1/actuator/health || exit 1",
         ]
       interval: 5s
       timeout: 5s
@@ -49,15 +56,21 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - teachingservice/.env.example
     environment:
       - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=its
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+      - KEYCLOAK_SERVER_URL=http://keycloak:8080/
+      - KEYCLOAK_REALM=intellilearn
+      - KEYCLOAK_CLIENT_ID=nginx
+      - KEYCLOAK_CLIENT_SECRET=w5upehqrRr3xTL57IRAX0Vn5U6zGitbr
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget -q --spider http://localhost:8080/actuator/health || exit 1",
+          "wget -q --spider http://localhost:8080/api/v1/actuator/health || exit 1",
         ]
       interval: 5s
       timeout: 5s
@@ -78,7 +91,12 @@ services:
       KC_DB_USERNAME: admin
       KC_DB_PASSWORD: admin
       KC_HEALTH_ENABLED: true
-    command: start-dev
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: 'true'
+      KC_HOSTNAME_STRICT_HTTPS: 'false'
+    command: start-dev --import-realm
+    volumes:
+      - ./keycloak/intellilearn-realm.json:/opt/keycloak/data/import/intellilearn-realm.json
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,11 +129,17 @@ services:
       - main_network
 
   nginx:
-    image: nginx:latest
+    build:
+      context: nginx
     ports:
       - "8080:80"
+    environment:
+      OIDC_JWKS_URI: "http://keycloak:8080/realms/intellilearn/protocol/openid-connect/certs"
+      OIDC_CLIENT_ID: "nginx"
+      OIDC_SSL_VERIFY: "no"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./nginx/lua:/usr/local/openresty/lualib/app:ro 
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost || exit 1"]
       interval: 5s

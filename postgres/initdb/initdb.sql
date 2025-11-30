@@ -1,2 +1,0 @@
-CREATE DATABASE keycloak WITH OWNER = admin;
-CREATE DATABASE its WITH OWNER = admin;

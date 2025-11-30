@@ -1,0 +1,19 @@
+package vn.edu.hcmut.intellilearn.learningservice.controller.datatype;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@AllArgsConstructor
+public class ApiError {
+    private boolean success;
+    private String message;
+    private String errorCode;
+    private LocalDateTime timestamp;
+
+    public static ApiError of(String message, String errorCode) {
+        return new ApiError(false, message, errorCode, LocalDateTime.now());
+    }
+}
