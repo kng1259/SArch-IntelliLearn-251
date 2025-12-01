@@ -5,10 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.hcmut.intellilearn.teachingservice.controller.datatype.ApiResponse;
-import vn.edu.hcmut.intellilearn.teachingservice.core.KeycloakPrincipal;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.KeycloakPrincipal;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.TeachingAssistantService;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.*;
 

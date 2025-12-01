@@ -1,4 +1,4 @@
-package vn.edu.hcmut.intellilearn.teachingservice.core;
+package vn.edu.hcmut.intellilearn.teachingservice.core.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -48,6 +48,9 @@ public class Course {
 
     @OneToMany(mappedBy = "course", orphanRemoval = true)
     private Set<Material> materials = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "course", orphanRemoval = true)
+    private Set<Exam> exams = new LinkedHashSet<>();
 
     @PrePersist
     public void onCreate() {

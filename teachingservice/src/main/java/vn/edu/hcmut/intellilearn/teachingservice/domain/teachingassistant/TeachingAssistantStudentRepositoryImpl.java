@@ -7,10 +7,12 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Course;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Enrollment;
-import vn.edu.hcmut.intellilearn.teachingservice.core.EnrollmentId;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Student;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Course;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Enrollment;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.EnrollmentId;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Student;
+import vn.edu.hcmut.intellilearn.teachingservice.core.repository.CourseRepository;
+import vn.edu.hcmut.intellilearn.teachingservice.core.repository.EnrollmentRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;

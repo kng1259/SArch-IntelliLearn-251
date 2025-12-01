@@ -9,8 +9,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
-import vn.edu.hcmut.intellilearn.teachingservice.core.KeycloakPrincipal;
-import vn.edu.hcmut.intellilearn.teachingservice.core.KeycloakUserDetails;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.KeycloakPrincipal;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.KeycloakUserDetails;
 
 import java.io.IOException;
 import java.util.List;

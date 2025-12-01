@@ -5,7 +5,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import vn.edu.hcmut.intellilearn.teachingservice.core.KeycloakUserDetails;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.KeycloakUserDetails;
 
 import java.security.Principal;
 

@@ -1,4 +1,4 @@
-package vn.edu.hcmut.intellilearn.teachingservice.core;
+package vn.edu.hcmut.intellilearn.teachingservice.core.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -8,7 +8,6 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 

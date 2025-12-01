@@ -2,7 +2,8 @@ package vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Course;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Course;
+import vn.edu.hcmut.intellilearn.teachingservice.core.repository.CourseRepository;
 
 import java.util.List;
 import java.util.UUID;

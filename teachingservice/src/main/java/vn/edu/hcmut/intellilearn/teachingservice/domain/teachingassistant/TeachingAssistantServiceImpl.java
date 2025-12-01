@@ -2,16 +2,17 @@ package vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Course;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Feedback;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Material;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Student;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Course;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Feedback;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Material;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Student;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.minio.MinioService;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.*;
 import vn.edu.hcmut.intellilearn.utils.mapper.CourseMapper;
 import vn.edu.hcmut.intellilearn.utils.mapper.FeedbackMapper;
 import vn.edu.hcmut.intellilearn.utils.mapper.MaterialMapper;
 import vn.edu.hcmut.intellilearn.utils.mapper.StudentMapper;
+import vn.edu.hcmut.intellilearn.utils.validator.CourseValidator;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +34,8 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
     private final StudentMapper studentMapper;
     private final MaterialMapper materialMapper;
 
+    private final CourseValidator courseValidator;
+
     @Override
     public CourseResponse createCourse(UUID tutorId, CourseRequest courseRequest) {
         Course course = courseMapper.toCourse(courseRequest);
@@ -47,21 +50,14 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
 
     @Override
     public CourseResponse updateCourse(UUID tutorId, UUID courseId, CourseRequest courseRequest) {
-        Course existedCourse = isCourseOwnedByTutor(tutorId, courseId);
-        if (existedCourse == null)
-            throw new IllegalArgumentException("Khóa học không tồn tại hoặc bạn không có quyền phản hồi khóa học này");
-        var newCourse = courseMapper.toCourse(courseRequest);
-        newCourse.setCourseId(courseId);
-        newCourse.setTutorId(tutorId);
-        newCourse.setCreatedAt(existedCourse.getCreatedAt());
-        return courseMapper.toCourseResponse(courseRepository.updateCourse(newCourse));
+        Course existedCourse = courseValidator.getCourseIfOwned(tutorId, courseId);
+        courseMapper.updateCourseFromDto(courseRequest, existedCourse);
+        return courseMapper.toCourseResponse(courseRepository.updateCourse(existedCourse));
     }
 
     @Override
     public FeedbackRequest createFeedback(UUID tutorId, FeedbackRequest feedbackRequest) {
-        Course existedCourse = isCourseOwnedByTutor(tutorId, feedbackRequest.getCourseId());
-        if (existedCourse == null)
-            throw new IllegalArgumentException("Khóa học không tồn tại hoặc bạn không có quyền phản hồi khóa học này");
+        Course existedCourse = courseValidator.getCourseIfOwned(tutorId, feedbackRequest.getCourseId());
         if (!enrollmentRepository.isStudentEnrolled(feedbackRequest.getStudentId(), feedbackRequest.getCourseId()))
             throw new IllegalArgumentException("Học viên chưa ghi danh khóa học này");
         Feedback feedback = feedbackMapper.toFeedBack(feedbackRequest);
@@ -81,9 +77,7 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
 
     @Override
     public LearningMaterialResponse createLearningMaterial(UUID tutorId,  LearningMaterialRequest learningMaterialRequest) {
-        Course existedCourse = isCourseOwnedByTutor(tutorId, learningMaterialRequest.getCourseId());
-        if (existedCourse == null)
-            throw new IllegalArgumentException("Khóa học không tồn tại hoặc bạn không có quyền phản hồi khóa học này");
+        Course existedCourse = courseValidator.getCourseIfOwned(tutorId, learningMaterialRequest.getCourseId());
         var url = minioService.uploadFile(learningMaterialRequest.getContent());
         Material material = materialMapper.toMaterial(learningMaterialRequest);
         material.setCourse(existedCourse);
@@ -96,16 +90,7 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
     @Override
     public void deleteLearningMaterial(UUID tutorId, UUID materialId) {
         Material existedMaterial = materialRepository.getLearningMaterial(materialId);
-        Course existedCourse = isCourseOwnedByTutor(tutorId, existedMaterial.getCourse().getCourseId());
-        if (existedCourse == null)
-            throw new IllegalArgumentException("Khóa học không tồn tại hoặc bạn không có quyền phản hồi khóa học này");
-
+        Course existedCourse = courseValidator.getCourseIfOwned(tutorId, existedMaterial.getCourse().getCourseId());
         materialRepository.deleteLearningMaterial(materialId);
-    }
-
-    private Course isCourseOwnedByTutor(UUID tutorId, UUID courseId){
-        var courseList =  courseRepository.selectTutorCourses(tutorId);
-        var existedCourse = courseList.stream().filter(course-> course.getCourseId().equals(courseId)).findFirst();
-        return existedCourse.orElse(null);
     }
 }

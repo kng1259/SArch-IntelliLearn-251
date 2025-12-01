@@ -1,7 +1,7 @@
-package vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant;
+package vn.edu.hcmut.intellilearn.teachingservice.core.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import vn.edu.hcmut.intellilearn.teachingservice.core.Feedback;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Feedback;
 
 import java.util.UUID;
 

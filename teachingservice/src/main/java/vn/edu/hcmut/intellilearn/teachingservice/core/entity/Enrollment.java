@@ -1,4 +1,4 @@
-package vn.edu.hcmut.intellilearn.teachingservice.core;
+package vn.edu.hcmut.intellilearn.teachingservice.core.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

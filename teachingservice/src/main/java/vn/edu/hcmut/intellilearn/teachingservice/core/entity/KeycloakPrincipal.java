@@ -1,4 +1,4 @@
-package vn.edu.hcmut.intellilearn.teachingservice.core;
+package vn.edu.hcmut.intellilearn.teachingservice.core.entity;
 
 import java.security.Principal;
 import java.util.UUID;
