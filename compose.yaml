@@ -128,6 +128,27 @@ services:
     networks:
       - main_network
 
+  web-app:
+    build:
+      context: web-app
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/teaching
+      - NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8083
+      - NEXT_PUBLIC_KEYCLOAK_REALM=intellilearn
+      - NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=nginx
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      nginx:
+        condition: service_healthy
+    networks:
+      - main_network
+
   nginx:
     build:
       context: nginx

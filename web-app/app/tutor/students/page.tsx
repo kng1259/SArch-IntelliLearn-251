@@ -1,87 +1,102 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useApi } from '@/lib/hooks/useApi';
+import courseService, { Course, Student, FeedbackRequest } from '@/lib/services/courseService';
 import TutorHeader from '@/app/components/TutorHeader';
 import ProvideFeedbackModal from '@/app/components/modals/ProvideFeedbackModal';
 
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  course: string;
-  enrollmentDate: string;
-  progress: number;
-  avgGrade: number;
-  lastActive: string;
+interface StudentWithCourse extends Student {
+  courseName: string;
+  courseId: string;
 }
 
 export default function StudentManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentWithCourse | null>(null);
+  const { data: courses, loading: coursesLoading, execute: fetchCourses } = useApi<Course[]>();
+  const [allStudents, setAllStudents] = useState<StudentWithCourse[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  
+  const tutorId = typeof window !== 'undefined' ? localStorage.getItem('tutorId') : null;
 
-  const handleProvideFeedback = (student: Student) => {
+  // Fetch courses on mount
+  useEffect(() => {
+    if (tutorId) {
+      fetchCourses(() => courseService.getCoursesByTutor(tutorId));
+    }
+  }, [tutorId]);
+
+  // Fetch students from all courses
+  useEffect(() => {
+    const fetchAllStudents = async () => {
+      if (!courses || courses.length === 0) return;
+      
+      setLoadingStudents(true);
+      try {
+        const studentsPromises = courses.map(async (course) => {
+          const students = await courseService.getCourseStudents(course.id);
+          return students.map(student => ({
+            ...student,
+            courseName: course.name,
+            courseId: course.id,
+          }));
+        });
+        
+        const studentsArrays = await Promise.all(studentsPromises);
+        const flattenedStudents = studentsArrays.flat();
+        setAllStudents(flattenedStudents);
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      } finally {
+        setLoadingStudents(false);
+      }
+    };
+
+    fetchAllStudents();
+  }, [courses]);
+
+  const handleProvideFeedback = (student: StudentWithCourse) => {
     setSelectedStudent(student);
     setFeedbackModalOpen(true);
   };
 
-  const students: Student[] = [
-    {
-      id: '1',
-      name: 'Alex Johnson',
-      email: 'alex.johnson@example.com',
-      avatar: 'AJ',
-      course: 'Introduction to Web Development',
-      enrollmentDate: '9/1/2025',
-      progress: 65,
-      avgGrade: 88,
-      lastActive: '11/5/2025',
-    },
-    {
-      id: '2',
-      name: 'Emily Davis',
-      email: 'emily.davis@example.com',
-      avatar: 'ED',
-      course: 'Introduction to Web Development',
-      enrollmentDate: '9/1/2025',
-      progress: 72,
-      avgGrade: 92,
-      lastActive: '11/4/2025',
-    },
-    {
-      id: '3',
-      name: 'Marcus Williams',
-      email: 'marcus.w@example.com',
-      avatar: 'MW',
-      course: 'Introduction to Web Development',
-      enrollmentDate: '9/15/2025',
-      progress: 58,
-      avgGrade: 75,
-      lastActive: '11/3/2025',
-    },
-    {
-      id: '4',
-      name: 'Sophie Chen',
-      email: 'sophie.chen@example.com',
-      avatar: 'SC',
-      course: 'Introduction to Web Development',
-      enrollmentDate: '9/1/2025',
-      progress: 85,
-      avgGrade: 95,
-      lastActive: '11/5/2025',
-    },
-  ];
+  const handleSaveFeedback = async (feedback: string) => {
+    if (!selectedStudent) return;
+    
+    try {
+      const feedbackRequest: FeedbackRequest = {
+        studentId: selectedStudent.id,
+        courseId: selectedStudent.courseId,
+        content: feedback,
+      };
+      
+      await courseService.createFeedback(feedbackRequest);
+      alert('Feedback đã được gửi thành công!');
+      setFeedbackModalOpen(false);
+    } catch (error: any) {
+      console.error('Error creating feedback:', error);
+      alert(`Lỗi gửi feedback: ${error.message}`);
+    }
+  };
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredStudents = allStudents.filter(student =>
+    student.fullName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getGradeColor = (grade: number) => {
-    if (grade >= 90) return 'text-green-600 bg-green-50 border-green-200';
-    if (grade >= 75) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-orange-600 bg-orange-50 border-orange-200';
+  const loading = coursesLoading || loadingStudents;
+  const totalStudents = allStudents.length;
+  const activeCourses = courses?.length || 0;
+
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -99,19 +114,21 @@ export default function StudentManagement() {
         <div className="grid grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">Total Students</p>
-            <p className="text-3xl font-semibold text-indigo-600">4</p>
+            <p className="text-3xl font-semibold text-indigo-600">{totalStudents}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">Active Courses</p>
-            <p className="text-3xl font-semibold text-indigo-600">2</p>
+            <p className="text-3xl font-semibold text-indigo-600">{activeCourses}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">Avg Completion</p>
-            <p className="text-3xl font-semibold text-indigo-600">70%</p>
+            <p className="text-3xl font-semibold text-indigo-600">-</p>
+            <p className="text-xs text-gray-500 mt-1">Coming soon</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <p className="text-sm text-gray-600 mb-2">Avg Grade</p>
-            <p className="text-3xl font-semibold text-indigo-600">88%</p>
+            <p className="text-3xl font-semibold text-indigo-600">-</p>
+            <p className="text-xs text-gray-500 mt-1">Coming soon</p>
           </div>
         </div>
 
@@ -140,84 +157,70 @@ export default function StudentManagement() {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Student</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Course</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Enrollment Date</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Progress</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Avg Grade</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Last Active</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
-                          {student.avatar}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{student.name}</p>
-                          <p className="text-sm text-gray-500">{student.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-blue-600">{student.course}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900">{student.enrollmentDate}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-[100px]">
-                          <div
-                            className="bg-black h-2 rounded-full"
-                            style={{ width: `${student.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-gray-600">{student.progress}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded text-xs font-medium border ${getGradeColor(student.avgGrade)}`}>
-                        {student.avgGrade}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600">{student.lastActive}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="View Analytics">
-                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                          </svg>
-                        </button>
-                        <button 
-                          onClick={() => handleProvideFeedback(student)}
-                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors" 
-                          title="Provide Feedback"
-                        >
-                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                        </button>
-                        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Email">
-                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
+            {loading && (
+              <div className="text-center py-12 text-gray-600">
+                Loading students...
+              </div>
+            )}
+            
+            {!loading && filteredStudents.length === 0 && (
+              <div className="text-center py-12 text-gray-600">
+                <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <p className="text-lg font-medium">No students found</p>
+                <p className="text-sm mt-1">Students will appear here when they enroll in your courses</p>
+              </div>
+            )}
+            
+            {!loading && filteredStudents.length > 0 && (
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Student</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Course</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Student ID</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredStudents.map((student) => (
+                    <tr key={`${student.id}-${student.courseId}`} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-semibold text-indigo-600">
+                            {getInitials(student.fullName)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{student.fullName}</p>
+                            <p className="text-sm text-gray-500">ID: {student.id.slice(0, 8)}...</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-blue-600">{student.courseName}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-gray-600 font-mono">{student.id}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => handleProvideFeedback(student)}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors" 
+                            title="Provide Feedback"
+                          >
+                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </main>
@@ -227,7 +230,14 @@ export default function StudentManagement() {
         <ProvideFeedbackModal
           isOpen={feedbackModalOpen}
           onClose={() => setFeedbackModalOpen(false)}
-          student={selectedStudent}
+          student={{
+            name: selectedStudent.fullName,
+            avatar: getInitials(selectedStudent.fullName),
+            course: selectedStudent.courseName,
+            progress: 0,
+            avgGrade: 0,
+          }}
+          onSave={handleSaveFeedback}
         />
       )}
     </div>
