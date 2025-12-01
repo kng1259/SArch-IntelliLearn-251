@@ -34,23 +34,26 @@ const mockUsers: LocalUserInfo[] = [
   },
 ];
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<LocalUserInfo | null>(
-    JSON.parse(localStorage.getItem("lms_user") || "null")
+    JSON.parse(
+      localStorage.getItem("lms_user") ||
+      "null"
+    )
   );
   const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("lms_user");
+  // useEffect(() => {
+  //   const storedUser = localStorage.getItem("lms_user");
 
-    if (storedUser) {
-      Promise.resolve().then(() => setUser(JSON.parse(storedUser)));
-    }
+  //   if (storedUser) {
+  //     Promise.resolve().then(() => setUser(JSON.parse(storedUser)));
+  //   }
 
-    Promise.resolve().then(() => setIsLoading(false));
-  }, []);
+  //   Promise.resolve().then(() => setIsLoading(false));
+  // }, []);
 
   const login = (email: string, password: string, role: UserRole): boolean => {
     const foundUser = mockUsers.find(
@@ -58,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
     if (foundUser) {
       setUser(foundUser);
-      window.localStorage.setItem("lms_user", JSON.stringify(foundUser));
+      // localStorage.setItem("lms_user", JSON.stringify(foundUser));
       return true;
     }
     alert("Invalid credentials");
@@ -81,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("lms_user");
+    // localStorage.removeItem("lms_user");
   };
 
   return (
@@ -89,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

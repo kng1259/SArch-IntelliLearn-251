@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import authService from '@/lib/services/authService';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import authService from "@/lib/services/authService";
 
 export default function SignIn() {
   const router = useRouter();
-  const [role, setRole] = useState<'student' | 'tutor'>('tutor');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<"student" | "tutor">("tutor");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,23 +21,27 @@ export default function SignIn() {
     try {
       // Login with Keycloak
       const userInfo = await authService.login(email, password);
-      
+
       // Store user ID as tutorId if user is a tutor
       if (authService.isTutor()) {
-        localStorage.setItem('tutorId', userInfo.sub);
-        router.push('/tutor/dashboard');
+        localStorage.setItem("tutorId", userInfo.sub);
+        router.push("/tutor/dashboard");
       } else if (authService.isStudent()) {
-        localStorage.setItem('studentId', userInfo.sub);
-        router.push('/student/dashboard');
+        localStorage.setItem("studentId", userInfo.sub);
+        router.push("/student/dashboard");
       } else {
-        setError('No valid role assigned to this account');
+        setError("No valid role assigned to this account");
       }
     } catch (err: any) {
-      console.error('Login failed:', err);
-      setError(err.message || 'Invalid email or password. Please try again.');
+      console.error("Login failed:", err);
+      setError(err.message || "Invalid email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSetRole = (role: "student" | "tutor") => {
+    setRole(role);
   };
 
   return (
@@ -217,7 +221,9 @@ export default function SignIn() {
               disabled={isLoading}
               className="w-full bg-[#0F172A] text-white py-3 rounded-lg hover:bg-[#1E293B] hover:cursor-pointer transition-colors font-medium text-sm mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : `Sign in as ${role === 'student' ? 'Student' : 'Tutor'}`}
+              {isLoading
+                ? "Signing in..."
+                : `Sign in as ${role === "student" ? "Student" : "Tutor"}`}
             </button>
 
             {/* Sign Up Link */}
@@ -237,13 +243,19 @@ export default function SignIn() {
 
         {/* Demo Credentials Note */}
         <div className="mt-5 p-4 bg-white rounded-lg border border-gray-200">
-          <p className="text-xs font-semibold text-gray-700 mb-2">Test Accounts:</p>
+          <p className="text-xs font-semibold text-gray-700 mb-2">
+            Test Accounts:
+          </p>
           <div className="space-y-1">
             <p className="text-xs text-gray-600">
-              <span className="font-medium">Tutor:</span> <span className="font-mono">tutor@gmail.com</span> / <span className="font-mono">tutor123</span>
+              <span className="font-medium">Tutor:</span>{" "}
+              <span className="font-mono">tutor@gmail.com</span> /{" "}
+              <span className="font-mono">tutor123</span>
             </p>
             <p className="text-xs text-gray-600">
-              <span className="font-medium">Student:</span> <span className="font-mono">student@gmail.com</span> / <span className="font-mono">student123</span>
+              <span className="font-medium">Student:</span>{" "}
+              <span className="font-mono">student@gmail.com</span> /{" "}
+              <span className="font-mono">student123</span>
             </p>
           </div>
         </div>
