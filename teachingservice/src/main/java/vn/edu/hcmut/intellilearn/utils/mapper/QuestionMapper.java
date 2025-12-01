@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 public abstract class QuestionMapper {
     @Autowired
     protected OptionMapper optionMapper;
-    @Mapping(target = "id", expression = "java(UUID.randomUUID())")
+//    @Mapping(target = "id", expression = "java(UUID.randomUUID())")
     public abstract Question toQuestion(QuestionRequest questionRequest);
-    @Mapping(target = "id", expression = "java(UUID.randomUUID())")
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "test", ignore = true)
     @Mapping(target = "options", ignore = true)
     public abstract Question toQuestion(QuestionUpdateRequest questionUpdateRequest);

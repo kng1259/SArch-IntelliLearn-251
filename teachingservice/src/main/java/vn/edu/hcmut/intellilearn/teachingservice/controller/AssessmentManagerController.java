@@ -7,9 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import vn.edu.hcmut.intellilearn.teachingservice.controller.datatype.ApiResponse;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.KeycloakPrincipal;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.AssessmentManagerService;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.ExamRequest;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.ExamResponse;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.ExamUpdateRequest;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.*;
 
 import java.util.UUID;
 
@@ -43,6 +41,53 @@ public class AssessmentManagerController {
         return ApiResponse.builder()
                 .success(true)
                 .message("Cập nhật bài thi thành công")
+                .build();
+    }
+
+    @DeleteMapping("/exam/{examId}")
+    public ApiResponse<?> deleteExam(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID examId) {
+        assessmentManagerService.deleteExam(principal.userId(), examId);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Xóa bài thi thành công")
+                .build();
+    }
+
+    @PostMapping("/quiz")
+    public ApiResponse<?> postQuiz(@AuthenticationPrincipal KeycloakPrincipal principal,@Valid @RequestBody QuizRequest quizRequest) {
+        assessmentManagerService.createQuiz(principal.userId(), quizRequest);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Tạo bài quiz thành công")
+                .build();
+    }
+
+
+    @GetMapping("/quiz/{quizId}")
+    public ApiResponse<QuizResponse> getQuiz(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID quizId) {
+        var quiz = assessmentManagerService.retrieveQuiz(principal.userId(), quizId);
+        return ApiResponse.<QuizResponse>builder()
+                .data(quiz)
+                .success(true)
+                .message("Lấy thông tin bài quiz thành công")
+                .build();
+    }
+
+    @PutMapping("/quiz/{quizId}")
+    public ApiResponse<?> putQuiz(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID quizId,  @Valid @RequestBody QuizUpdateRequest quizRequest) {
+        assessmentManagerService.updateQuiz(principal.userId(), quizId, quizRequest);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Cập nhật bài quiz thành công")
+                .build();
+    }
+
+    @DeleteMapping("/quiz/{quizId}")
+    public ApiResponse<?> deleteQuiz(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID quizId) {
+        assessmentManagerService.deleteQuiz(principal.userId(), quizId);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Xóa bài quiz thành công")
                 .build();
     }
 }

@@ -55,6 +55,9 @@ public class Test {
     @OneToOne(mappedBy = "test", orphanRemoval = true, cascade = CascadeType.ALL)
     private Exam exam;
 
+    @OneToOne(mappedBy = "test", orphanRemoval = true, cascade = CascadeType.ALL)
+    private Quiz quiz;
+
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();

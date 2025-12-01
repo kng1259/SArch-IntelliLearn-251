@@ -9,9 +9,7 @@ import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Option;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.OptionId;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Question;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Test;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.ExamRequest;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.ExamUpdateRequest;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.QuestionUpdateRequest;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,12 +22,17 @@ public abstract class TestMapper {
     protected OptionMapper optionMapper;
 
     public abstract Test toTest(ExamRequest examRequest);
+    public abstract Test toTest(QuizRequest quizRequest);
 
     @Mapping(target = "questions", ignore = true)
     public abstract void updateTest(ExamUpdateRequest dto, @MappingTarget Test entity);
 
+    @Mapping(target = "questions", ignore = true)
+    public abstract void updateTest(QuizUpdateRequest dto, @MappingTarget Test entity);
+
+
     @AfterMapping
-    public void updateQuestions(ExamUpdateRequest dto, @MappingTarget Test entity) {
+    public void updateQuestions(TestUpdateRequest dto, @MappingTarget Test entity) {
         if (dto.getQuestions() == null) return;
 
         // DELETE logic...

@@ -13,7 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ExamUpdateRequest {
+public class ExamUpdateRequest extends TestUpdateRequest {
     @NotBlank(message = "Tên bài kiểm tra không được để trống")
     String name;
 
@@ -24,5 +24,4 @@ public class ExamUpdateRequest {
     LocalDateTime endAt;
     Long duration;
     UUID courseId;
-    List<QuestionUpdateRequest> questions;
 }

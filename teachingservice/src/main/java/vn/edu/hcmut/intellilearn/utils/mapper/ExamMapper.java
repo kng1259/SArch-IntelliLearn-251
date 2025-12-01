@@ -13,7 +13,7 @@ import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.dataty
 public abstract class ExamMapper {
 
     @Autowired
-    protected TestMapper testMapper; // <--- Inject con
+    protected TestMapper testMapper;
 
     @Mapping(target = "test", ignore = true)
     public abstract void updateExam(ExamUpdateRequest dto, @MappingTarget Exam entity);

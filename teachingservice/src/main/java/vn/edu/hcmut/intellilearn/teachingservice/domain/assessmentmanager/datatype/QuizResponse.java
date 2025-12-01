@@ -6,13 +6,12 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ExamResponse {
+public class QuizResponse {
     UUID id;
     String name;
     String description;
@@ -20,5 +19,6 @@ public class ExamResponse {
     LocalDateTime endAt;
     LocalDateTime createdAt;
     Integer duration;
+    String level;
     List<QuestionResponse> questions;
 }

@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="JpaBuddyIdeaProjectConfig">
+  <component name="JpaBuddyIdeaProjectConfig" newRepositoryParent="org.springframework.data.jpa.repository.JpaRepository">
     <option name="reLastEntityCreationPackage" value="teachingservice/src/main/java/vn/edu/hcmut/intellilearn/teachingservice/core/entity" />
     <option name="reverseEngineeringLastDbConnectionId" value="dcc481f8-ab1b-473a-9799-f662aefba3f7" />
+  </component>
+  <component name="JpaPluginProjectSettings">
+    <option name="lastSelectedLanguage" value="Java" />
   </component>
 </project>
