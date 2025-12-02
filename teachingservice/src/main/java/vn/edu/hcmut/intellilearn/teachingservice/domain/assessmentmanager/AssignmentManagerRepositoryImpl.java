@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Assignment;
 import vn.edu.hcmut.intellilearn.teachingservice.core.repository.AssignmentRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -15,6 +16,11 @@ public class AssignmentManagerRepositoryImpl implements AssignmentManagerReposit
     @Override
     public void insertAssignment(Assignment assignment) {
         assignmentRepository.save(assignment);
+    }
+
+    @Override
+    public List<Assignment> selectAssignmentsByCourse(UUID courseId) {
+        return assignmentRepository.findByCourse_CourseId(courseId);
     }
 
     @Override

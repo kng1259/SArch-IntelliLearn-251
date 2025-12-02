@@ -13,7 +13,9 @@ import vn.edu.hcmut.intellilearn.utils.validator.CourseValidator;
 import vn.edu.hcmut.intellilearn.utils.validator.ExamValidator;
 import vn.edu.hcmut.intellilearn.utils.validator.QuizValidator;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -46,6 +48,10 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
         Exam newExam = new Exam();
         newExam.setCourse(existedCourse);
         Test newTest = testMapper.toTest(exam);
+        // Set default startAt if null
+        if (newTest.getStartAt() == null) {
+            newTest.setStartAt(LocalDateTime.now());
+        }
         Set<Question> newQuestions = new LinkedHashSet<>();
         exam.getQuestions().forEach(
                 questionRequest -> {
@@ -71,6 +77,21 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
         newTest.setQuestions(newQuestions);
         newExam.setTest(newTest);
         examRepository.insertExam(newExam);
+    }
+
+    @Override
+    public List<ExamResponse> retrieveExamsByCourse(UUID courseId) {
+        List<Exam> exams = examRepository.retrieveExamsByCourse(courseId);
+        return exams.stream().map(exam -> ExamResponse.builder()
+                .id(exam.getId())
+                .name(exam.getTest().getName())
+                .description(exam.getTest().getDescription())
+                .startAt(exam.getTest().getStartAt())
+                .endAt(exam.getTest().getEndAt())
+                .createdAt(exam.getTest().getCreatedAt())
+                .duration(exam.getTest().getDuration())
+                .build()
+        ).toList();
     }
 
     @Override
@@ -112,6 +133,10 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
         Quiz newQuiz = new Quiz();
         newQuiz.setCourse(existedCourse);
         Test newTest = testMapper.toTest(quiz);
+        // Set default startAt if null
+        if (newTest.getStartAt() == null) {
+            newTest.setStartAt(LocalDateTime.now());
+        }
         Set<Question> newQuestions = new LinkedHashSet<>();
         quiz.getQuestions().forEach(
                 questionRequest -> {
@@ -136,8 +161,34 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
         );
         newTest.setQuestions(newQuestions);
         newQuiz.setTest(newTest);
-        newQuiz.setLevelCodename(levelRepository.findById(quiz.getLevel()).orElse(null));
+        // Set level, fallback to NORMAL if not found
+        Level level = levelRepository.findById(quiz.getLevel()).orElse(null);
+        if (level == null) {
+            level = levelRepository.findById("NORMAL").orElse(null);
+        }
+        newQuiz.setLevelCodename(level);
         quizRepository.insertQuiz(newQuiz);
+    }
+
+    @Override
+    public List<QuizResponse> retrieveQuizzesByCourse(UUID courseId) {
+        List<Quiz> quizzes = quizRepository.selectQuizzesByCourse(courseId);
+        return quizzes.stream().map(quiz -> QuizResponse.builder()
+                .id(quiz.getId())
+                .name(quiz.getTest().getName())
+                .description(quiz.getTest().getDescription())
+                .startAt(quiz.getTest().getStartAt())
+                .endAt(quiz.getTest().getEndAt())
+                .createdAt(quiz.getTest().getCreatedAt())
+                .duration(quiz.getTest().getDuration())
+                .level(quiz.getLevelCodename() != null ? quiz.getLevelCodename().getCodename() : null)
+                .questions(
+                        quiz.getTest().getQuestions() != null ?
+                        quiz.getTest().getQuestions().stream().map(
+                                questionMapper::toQuestionResponse).toList() : List.of()
+                )
+                .build()
+        ).toList();
     }
 
     @Override
@@ -179,12 +230,33 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
         Course existedCourse = courseValidator.getCourseIfOwned(tutorId, assignment.getCourseId());
         Assignment newAssignment = assignmentMapper.toAssignment(assignment);
 
-        var instructionUrl = minioService.uploadFile(assignment.getInstruction());
-        var guideLineUrl = minioService.uploadFile(assignment.getGradingGuidelines());
-        newAssignment.setInstruction(instructionUrl);
-        newAssignment.setGradingGuidelines(guideLineUrl);
+        // Set default startAt if null
+        if (newAssignment.getStartAt() == null) {
+            newAssignment.setStartAt(LocalDateTime.now());
+        }
+
+        // Validate dates: startAt must be before endAt
+        if (newAssignment.getEndAt() != null && newAssignment.getStartAt() != null 
+            && !newAssignment.getStartAt().isBefore(newAssignment.getEndAt())) {
+            throw new IllegalArgumentException("Start date must be before end date.");
+        }
+
+        if (assignment.getInstruction() != null && !assignment.getInstruction().isEmpty()) {
+            var instructionUrl = minioService.uploadFile(assignment.getInstruction());
+            newAssignment.setInstruction(instructionUrl);
+        }
+        if (assignment.getGradingGuidelines() != null && !assignment.getGradingGuidelines().isEmpty()) {
+            var guideLineUrl = minioService.uploadFile(assignment.getGradingGuidelines());
+            newAssignment.setGradingGuidelines(guideLineUrl);
+        }
         newAssignment.setCourse(existedCourse);
         assignmentRepository.insertAssignment(newAssignment);
+    }
+
+    @Override
+    public List<AssignmentResponse> retrieveAssignmentsByCourse(UUID courseId) {
+        List<Assignment> assignments = assignmentRepository.selectAssignmentsByCourse(courseId);
+        return assignments.stream().map(assignmentMapper::toAssignmentResponse).toList();
     }
 
     @Override
@@ -199,11 +271,11 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
         assignmentValidator.validateAssignmentOwnership(tutorId, assignmentId);
         Assignment  oldAssignment = assignmentRepository.selectAssignment(assignmentId);
         assignmentMapper.updateAssignment(assignment, oldAssignment);
-        if(assignment.getGradingGuidelines()!=null){
+        if(assignment.getGradingGuidelines() != null && !assignment.getGradingGuidelines().isEmpty()){
             var guideLineUrl = minioService.uploadFile(assignment.getGradingGuidelines());
             oldAssignment.setGradingGuidelines(guideLineUrl);
         }
-        if(assignment.getInstruction()!=null){
+        if(assignment.getInstruction() != null && !assignment.getInstruction().isEmpty()){
             var instructionUrl = minioService.uploadFile(assignment.getInstruction());
             oldAssignment.setInstruction(instructionUrl);
         }

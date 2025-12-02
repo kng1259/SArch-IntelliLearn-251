@@ -5,6 +5,7 @@ import { useApi } from '@/lib/hooks/useApi';
 import courseService, { Course, Student, FeedbackRequest } from '@/lib/services/courseService';
 import TutorHeader from '@/app/components/TutorHeader';
 import ProvideFeedbackModal from '@/app/components/modals/ProvideFeedbackModal';
+import { useToast } from '@/app/components/Toast';
 
 interface StudentWithCourse extends Student {
   courseName: string;
@@ -62,6 +63,8 @@ export default function StudentManagement() {
     setFeedbackModalOpen(true);
   };
 
+  const toast = useToast();
+
   const handleSaveFeedback = async (feedback: string) => {
     if (!selectedStudent) return;
     
@@ -73,11 +76,11 @@ export default function StudentManagement() {
       };
       
       await courseService.createFeedback(feedbackRequest);
-      alert('Feedback đã được gửi thành công!');
+      toast.success('Feedback đã được gửi thành công!');
       setFeedbackModalOpen(false);
     } catch (error: any) {
       console.error('Error creating feedback:', error);
-      alert(`Lỗi gửi feedback: ${error.message}`);
+      toast.error(`Lỗi gửi feedback: ${error.message}`);
     }
   };
 

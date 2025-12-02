@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Exam;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,4 +17,6 @@ public interface ExamRepository extends JpaRepository<Exam, UUID> {
         WHERE e.id = :id
     """)
     Optional<Exam> findDetailById(UUID id);
+
+    List<Exam> findByCourse_CourseId(UUID courseId);
 }

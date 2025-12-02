@@ -8,8 +8,10 @@ import DashboardCard from '@/app/components/DashboardCard';
 import CourseCard from '@/app/components/CourseCard';
 import PendingActionCard from '@/app/components/PendingActionCard';
 import CreateCourseModal from '@/app/components/modals/CreateCourseModal';
+import { useToast } from '@/app/components/Toast';
 
 export default function TutorDashboard() {
+  const toast = useToast();
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
   const { data: courses, loading, error, execute } = useApi<Course[]>();
   
@@ -72,10 +74,10 @@ export default function TutorDashboard() {
       }
       
       setIsCreateCourseModalOpen(false);
-      alert(`Khóa học "${newCourse.name}" đã được tạo thành công!`);
+      toast.success(`Khóa học "${newCourse.name}" đã được tạo thành công!`);
     } catch (err: any) {
       console.error('Failed to create course:', err);
-      alert(`Lỗi tạo khóa học: ${err.message}`);
+      toast.error(`Lỗi tạo khóa học: ${err.message}`);
     }
   };
 

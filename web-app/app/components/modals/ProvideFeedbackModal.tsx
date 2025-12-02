@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/app/components/Toast';
 
 interface ProvideFeedbackModalProps {
   isOpen: boolean;
@@ -18,12 +19,13 @@ interface ProvideFeedbackModalProps {
 export default function ProvideFeedbackModal({ isOpen, onClose, student, onSave }: ProvideFeedbackModalProps) {
   const [feedback, setFeedback] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const toast = useToast();
 
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
     if (!feedback.trim()) {
-      alert('Please enter feedback message');
+      toast.warning('Please enter feedback message');
       return;
     }
 
