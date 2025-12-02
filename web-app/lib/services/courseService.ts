@@ -57,48 +57,44 @@ const courseService = {
   // Get courses by tutor ID
   // GET /course/tutor/{tutorId}
   getCoursesByTutor: async (tutorId: string): Promise<Course[]> => {
-    const response = await api.get<ApiResponse<Course[]>>(`/course/tutor/${tutorId}`);
-    return response.data;
+    // api.get already unwraps ApiResponse.data, so we get Course[] directly
+    return api.get<Course[]>(`/course/tutor/${tutorId}`);
   },
 
   // Create new course
   // POST /course
   createCourse: async (courseData: CourseRequest): Promise<Course> => {
-    const response = await api.post<ApiResponse<Course>>('/course', courseData);
-    return response.data;
+    // api.post already unwraps ApiResponse.data, so we get Course directly
+    return api.post<Course>('/course', courseData);
   },
 
   // Update course
   // PUT /course/{courseId}
   updateCourse: async (courseId: string, courseData: CourseRequest): Promise<Course> => {
-    const response = await api.put<ApiResponse<Course>>(`/course/${courseId}`, courseData);
-    return response.data;
+    return api.put<Course>(`/course/${courseId}`, courseData);
   },
 
   // Get students in a course
   // GET /student/course/{courseId}
   getCourseStudents: async (courseId: string): Promise<Student[]> => {
-    const response = await api.get<ApiResponse<Student[]>>(`/student/course/${courseId}`);
-    return response.data;
+    return api.get<Student[]>(`/student/course/${courseId}`);
   },
 
   // Learning Materials
   // POST /learning-material
   createLearningMaterial: async (material: LearningMaterialRequest): Promise<LearningMaterial> => {
-    const response = await api.post<ApiResponse<LearningMaterial>>('/learning-material', material);
-    return response.data;
+    return api.post<LearningMaterial>('/learning-material', material);
   },
 
   // DELETE /learning-material/{materialId}
   deleteLearningMaterial: async (materialId: string): Promise<void> => {
-    await api.delete<ApiResponse<void>>(`/learning-material/${materialId}`);
+    await api.delete<void>(`/learning-material/${materialId}`);
   },
 
   // Feedback
   // POST /feedback
   createFeedback: async (feedback: FeedbackRequest): Promise<FeedbackRequest> => {
-    const response = await api.post<ApiResponse<FeedbackRequest>>('/feedback', feedback);
-    return response.data;
+    return api.post<FeedbackRequest>('/feedback', feedback);
   },
 };
 

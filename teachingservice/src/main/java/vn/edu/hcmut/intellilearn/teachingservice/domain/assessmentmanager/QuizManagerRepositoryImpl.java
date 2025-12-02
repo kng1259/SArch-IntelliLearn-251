@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Quiz;
 import vn.edu.hcmut.intellilearn.teachingservice.core.repository.QuizRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -15,6 +16,11 @@ public class QuizManagerRepositoryImpl implements QuizManagerRepository {
     @Override
     public void insertQuiz(Quiz quiz) {
         quizRepository.save(quiz);
+    }
+
+    @Override
+    public List<Quiz> selectQuizzesByCourse(UUID courseId) {
+        return quizRepository.findByCourse_CourseId(courseId);
     }
 
     @Override

@@ -1,11 +1,12 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import TutorHeader from '@/app/components/TutorHeader';
 import UpdateCourseModal from '@/app/components/modals/UpdateCourseModal';
 import AddMaterialModal from '@/app/components/modals/AddMaterialModal';
 import CreateQuizModal from '@/app/components/modals/CreateQuizModal';
+import EditQuizModal from '@/app/components/modals/EditQuizModal';
 import CreateAssignmentModal from '@/app/components/modals/CreateAssignmentModal';
 import CreateExamModal from '@/app/components/modals/CreateExamModal';
 import OverviewTab from '@/app/components/course/OverviewTab';
@@ -13,14 +14,54 @@ import MaterialsTab from '@/app/components/course/MaterialsTab';
 import QuizzesTab from '@/app/components/course/QuizzesTab';
 import AssignmentsTab from '@/app/components/course/AssignmentsTab';
 import ExamsTab from '@/app/components/course/ExamsTab';
+import { useToast } from '@/app/components/Toast';
+import assessmentService, { 
+  ExamRequest, 
+  ExamResponse,
+  QuizRequest, 
+  QuizResponse,
+  QuizUpdateRequest,
+  AssignmentRequest,
+  AssignmentResponse 
+} from '@/lib/services/assessmentService';
 
 type TabType = 'overview' | 'materials' | 'quizzes' | 'assignments' | 'exams';
 
+// UI types that match what the Tab components expect
+interface UIQuiz {
+  id: string;
+  title: string;
+  description?: string;
+  startAt?: string;
+  duration: number;
+  level?: string;
+  questions: number;
+}
+
+interface UIAssignment {
+  id: string;
+  title: string;
+  module: string;
+  dueDate: string;
+}
+
+interface UIExam {
+  id: string;
+  title: string;
+  date: string;
+  duration: number;
+  marks: number;
+  status: string;
+}
+
 export default function CourseManagement({ params }: { params: Promise<{ id: string }> }) {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
   const [isAddQuizModalOpen, setIsAddQuizModalOpen] = useState(false);
+  const [isEditQuizModalOpen, setIsEditQuizModalOpen] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState<UIQuiz | null>(null);
   const [isAddAssignmentModalOpen, setIsAddAssignmentModalOpen] = useState(false);
   const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
   const [courseInfo, setCourseInfo] = useState({
@@ -29,8 +70,79 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
     category: 'Web Development',
   });
 
-  // Mock data - replace with API call based on params.id
+  // State for API data
+  const [exams, setExams] = useState<UIExam[]>([]);
+  const [quizzes, setQuizzes] = useState<UIQuiz[]>([]);
+  const [assignments, setAssignments] = useState<UIAssignment[]>([]);
+  const [loadingExams, setLoadingExams] = useState(true);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [loadingAssignments, setLoadingAssignments] = useState(true);
+
+  // Unwrap params
   const { id } = use(params);
+
+  // Fetch functions (reusable for refresh after create)
+  const fetchExams = async () => {
+    try {
+      const data = await assessmentService.getExamsByCourse(id);
+      setExams(data.map((exam: ExamResponse): UIExam => ({
+        id: exam.id,
+        title: exam.name,
+        date: exam.startAt ? new Date(exam.startAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD',
+        duration: exam.duration || 0,
+        marks: 100, // Default value
+        status: exam.startAt && new Date(exam.startAt) < new Date() ? 'completed' : 'upcoming',
+      })));
+    } catch (err) {
+      console.error('Failed to fetch exams:', err);
+    } finally {
+      setLoadingExams(false);
+    }
+  };
+
+  const fetchQuizzes = async () => {
+    try {
+      const data = await assessmentService.getQuizzesByCourse(id);
+      setQuizzes(data.map((quiz: QuizResponse): UIQuiz => ({
+        id: quiz.id,
+        title: quiz.name,
+        description: quiz.description,
+        startAt: quiz.startAt,
+        duration: quiz.duration || 0,
+        level: quiz.level,
+        questions: quiz.questions?.length || 0,
+      })));
+    } catch (err) {
+      console.error('Failed to fetch quizzes:', err);
+    } finally {
+      setLoadingQuizzes(false);
+    }
+  };
+
+  const fetchAssignments = async () => {
+    try {
+      const data = await assessmentService.getAssignmentsByCourse(id);
+      setAssignments(data.map((assignment: AssignmentResponse): UIAssignment => ({
+        id: assignment.id,
+        title: assignment.name,
+        module: 'General', // Default value
+        dueDate: assignment.endAt ? new Date(assignment.endAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'TBD',
+      })));
+    } catch (err) {
+      console.error('Failed to fetch assignments:', err);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  };
+
+  // Fetch assessments from API
+  useEffect(() => {
+    fetchExams();
+    fetchQuizzes();
+    fetchAssignments();
+  }, [id]);
+
+  // Course data (materials and modules still mock, exams/quizzes/assignments from API)
   const courseData = {
     id: id,
     title: courseInfo.title,
@@ -42,8 +154,8 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
     duration: '8 weeks',
     stats: {
       totalMaterials: 5,
-      totalQuizzes: 1,
-      totalAssignments: 2,
+      totalQuizzes: quizzes.length,
+      totalAssignments: assignments.length,
     },
     modules: [
       {
@@ -93,47 +205,6 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
         type: 'video',
       },
     ],
-    quizzes: [
-      {
-        id: '1',
-        title: 'HTML Fundamentals Quiz',
-        module: 'HTML Basics',
-        questions: 2,
-        duration: 15,
-      },
-    ],
-    assignments: [
-      {
-        id: '1',
-        title: 'Build a Personal Portfolio Page',
-        module: 'HTML Basics',
-        dueDate: '11/15/2025',
-      },
-      {
-        id: '2',
-        title: 'Style Your Portfolio',
-        module: 'CSS Styling',
-        dueDate: '11/20/2025',
-      },
-    ],
-    exams: [
-      {
-        id: '1',
-        title: 'Web Development Midterm',
-        date: 'Nov 18, 2025',
-        duration: 90,
-        marks: 100,
-        status: 'completed',
-      },
-      {
-        id: '2',
-        title: 'JavaScript Final Exam',
-        date: 'Dec 15, 2025',
-        duration: 120,
-        marks: 150,
-        status: 'upcoming',
-      },
-    ],
   };
 
   const tabs = [
@@ -155,19 +226,116 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
     console.log('Adding material:', data);
   };
 
-  const handleAddQuiz = (data: { title: string; description: string; timeLimit: number; passingScore: number }) => {
-    // TODO: Call API to add quiz
-    console.log('Adding quiz:', data);
+  const handleAddQuiz = async (data: { title: string; description: string; startDate: string; timeLimit: number; passingScore: number; level: string }) => {
+    try {
+      const quizRequest: QuizRequest = {
+        name: data.title,
+        description: data.description,
+        startAt: new Date(data.startDate).toISOString(),
+        duration: data.timeLimit,
+        courseId: id,
+        level: data.level,
+        questions: [],
+      };
+      
+      await assessmentService.createQuiz(quizRequest);
+      toast.success('Tạo quiz thành công!');
+      setIsAddQuizModalOpen(false);
+      fetchQuizzes(); // Refresh quizzes list
+    } catch (err: any) {
+      console.error('Failed to create quiz:', err);
+      toast.error(`Lỗi tạo quiz: ${err.message}`);
+    }
   };
 
-  const handleAddAssignment = (data: { title: string; description: string; dueDate: string; maxScore: number }) => {
-    // TODO: Call API to add assignment
-    console.log('Adding assignment:', data);
+  const handleEditQuiz = (quiz: UIQuiz) => {
+    setSelectedQuiz(quiz);
+    setIsEditQuizModalOpen(true);
   };
 
-  const handleAddExam = (data: { title: string; description: string; examDate: string; duration: number; totalMarks: number }) => {
-    // TODO: Call API to add exam
-    console.log('Adding exam:', data);
+  const handleUpdateQuiz = async (data: { name: string; description: string; startAt: string; duration: number; level: string }) => {
+    if (!selectedQuiz) return;
+    
+    try {
+      const updateRequest: QuizUpdateRequest = {
+        name: data.name,
+        description: data.description,
+        startAt: new Date(data.startAt).toISOString(),
+        duration: data.duration,
+        level: data.level,
+      };
+      
+      await assessmentService.updateQuiz(selectedQuiz.id, updateRequest);
+      toast.success('Cập nhật quiz thành công!');
+      setIsEditQuizModalOpen(false);
+      setSelectedQuiz(null);
+      fetchQuizzes(); // Refresh quizzes list
+    } catch (err: any) {
+      console.error('Failed to update quiz:', err);
+      toast.error(`Lỗi cập nhật quiz: ${err.message}`);
+    }
+  };
+
+  const handleDeleteQuiz = async (quizId: string) => {
+    try {
+      await assessmentService.deleteQuiz(quizId);
+      toast.success('Xóa quiz thành công!');
+      fetchQuizzes(); // Refresh quizzes list
+    } catch (err: any) {
+      console.error('Failed to delete quiz:', err);
+      toast.error(`Lỗi xóa quiz: ${err.message}`);
+    }
+  };
+
+  const handleAddAssignment = async (data: { 
+    title: string; 
+    description: string; 
+    startDate: string;
+    dueDate: string; 
+    maxScore: number;
+    instructionFile?: File;
+    gradingGuidelinesFile?: File;
+  }) => {
+    try {
+      const assignmentRequest: AssignmentRequest = {
+        name: data.title,
+        description: data.description,
+        startAt: new Date(data.startDate).toISOString(),
+        endAt: new Date(data.dueDate).toISOString(),
+        courseId: id,
+        instruction: data.instructionFile,
+        gradingGuidelines: data.gradingGuidelinesFile,
+      };
+      
+      await assessmentService.createAssignment(assignmentRequest);
+      toast.success('Tạo assignment thành công!');
+      setIsAddAssignmentModalOpen(false);
+      fetchAssignments(); // Refresh assignments list
+    } catch (err: any) {
+      console.error('Failed to create assignment:', err);
+      toast.error(`Lỗi tạo assignment: ${err.message}`);
+    }
+  };
+
+  const handleAddExam = async (data: { title: string; description: string; examDate: string; duration: number; totalMarks: number }) => {
+    try {
+      const examRequest: ExamRequest = {
+        name: data.title,
+        description: data.description,
+        startAt: new Date(data.examDate).toISOString(),
+        duration: data.duration,
+        courseId: id,
+        questions: [],
+      };
+      
+      await assessmentService.createExam(examRequest);
+      toast.success('Tạo exam thành công!');
+      setIsAddExamModalOpen(false);
+      fetchExams(); // Refresh exams list
+    } catch (err: any) {
+      console.error('Failed to create exam:', err);
+      toast.error(`Lỗi tạo exam: ${err.message}`);
+    }
   };
 
   return (
@@ -257,19 +425,22 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
         )}
         {activeTab === 'quizzes' && (
           <QuizzesTab 
-            quizzes={courseData.quizzes}
+            quizzes={quizzes}
+            courseId={id}
             onAddClick={() => setIsAddQuizModalOpen(true)}
+            onEditClick={handleEditQuiz}
+            onDeleteClick={handleDeleteQuiz}
           />
         )}
         {activeTab === 'assignments' && (
           <AssignmentsTab 
-            assignments={courseData.assignments}
+            assignments={assignments}
             onAddClick={() => setIsAddAssignmentModalOpen(true)}
           />
         )}
         {activeTab === 'exams' && (
           <ExamsTab 
-            exams={courseData.exams}
+            exams={exams}
             onAddClick={() => setIsAddExamModalOpen(true)}
           />
         )}
@@ -300,6 +471,24 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
         isOpen={isAddQuizModalOpen}
         onClose={() => setIsAddQuizModalOpen(false)}
         onAdd={handleAddQuiz}
+      />
+
+      {/* Edit Quiz Modal */}
+      <EditQuizModal
+        isOpen={isEditQuizModalOpen}
+        onClose={() => {
+          setIsEditQuizModalOpen(false);
+          setSelectedQuiz(null);
+        }}
+        quiz={selectedQuiz ? {
+          id: selectedQuiz.id,
+          name: selectedQuiz.title,
+          description: selectedQuiz.description || '',
+          startAt: selectedQuiz.startAt,
+          duration: selectedQuiz.duration,
+          level: selectedQuiz.level,
+        } : null}
+        onSave={handleUpdateQuiz}
       />
 
       {/* Create Assignment Modal */}

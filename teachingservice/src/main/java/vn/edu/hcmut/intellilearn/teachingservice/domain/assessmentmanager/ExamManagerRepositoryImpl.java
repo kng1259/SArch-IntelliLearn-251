@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Exam;
 import vn.edu.hcmut.intellilearn.teachingservice.core.repository.ExamRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -14,6 +15,11 @@ public class ExamManagerRepositoryImpl implements ExamManagerRepository {
     @Override
     public void insertExam(Exam exam) {
         examRepository.save(exam);
+    }
+
+    @Override
+    public List<Exam> retrieveExamsByCourse(UUID courseId) {
+        return examRepository.findByCourse_CourseId(courseId);
     }
 
     @Override

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import TutorHeader from '@/app/components/TutorHeader';
+import { useToast } from '@/app/components/Toast';
 
 export default function AssignmentGrading() {
   const params = useParams();
@@ -52,10 +53,12 @@ export default function AssignmentGrading() {
     details: "Student's portfolio includes: Professional header, About section, Skills showcase, Project gallery, and Contact form. Clean HTML structure with semantic tags.",
   };
 
+  const toast = useToast();
+
   const handleSubmitGrade = () => {
     console.log('Submitting grade:', { grade, feedback });
     // Handle grade submission
-    alert('Grade submitted successfully!');
+    toast.success('Grade submitted successfully!');
     setGrade('');
     setFeedback('');
   };

@@ -10,6 +10,7 @@ import vn.edu.hcmut.intellilearn.teachingservice.core.entity.KeycloakPrincipal;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.AssessmentManagerService;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -23,6 +24,16 @@ public class AssessmentManagerController {
         return ApiResponse.builder()
                 .success(true)
                 .message("Tạo bài thi thành công")
+                .build();
+    }
+
+    @GetMapping("/exam/course/{courseId}")
+    public ApiResponse<List<ExamResponse>> getExamsByCourse(@PathVariable UUID courseId) {
+        var exams = assessmentManagerService.retrieveExamsByCourse(courseId);
+        return ApiResponse.<List<ExamResponse>>builder()
+                .data(exams)
+                .success(true)
+                .message("Lấy danh sách bài thi thành công")
                 .build();
     }
 
@@ -63,6 +74,15 @@ public class AssessmentManagerController {
                 .build();
     }
 
+    @GetMapping("/quiz/course/{courseId}")
+    public ApiResponse<List<QuizResponse>> getQuizzesByCourse(@PathVariable UUID courseId) {
+        var quizzes = assessmentManagerService.retrieveQuizzesByCourse(courseId);
+        return ApiResponse.<List<QuizResponse>>builder()
+                .data(quizzes)
+                .success(true)
+                .message("Lấy danh sách quiz thành công")
+                .build();
+    }
 
     @GetMapping("/quiz/{quizId}")
     public ApiResponse<QuizResponse> getQuiz(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID quizId) {
@@ -98,6 +118,16 @@ public class AssessmentManagerController {
         return ApiResponse.builder()
                 .success(true)
                 .message("Tạo assignment thành công")
+                .build();
+    }
+
+    @GetMapping("/assignment/course/{courseId}")
+    public ApiResponse<List<AssignmentResponse>> getAssignmentsByCourse(@PathVariable UUID courseId) {
+        var assignments = assessmentManagerService.retrieveAssignmentsByCourse(courseId);
+        return ApiResponse.<List<AssignmentResponse>>builder()
+                .data(assignments)
+                .success(true)
+                .message("Lấy danh sách assignment thành công")
                 .build();
     }
 
