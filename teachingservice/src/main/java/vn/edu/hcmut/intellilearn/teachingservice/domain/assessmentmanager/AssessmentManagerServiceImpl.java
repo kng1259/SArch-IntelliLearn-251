@@ -1,11 +1,14 @@
 package vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.tool.schema.internal.exec.AbstractScriptSourceInput;
 import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.*;
 import vn.edu.hcmut.intellilearn.teachingservice.core.repository.LevelRepository;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.*;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.minio.MinioService;
 import vn.edu.hcmut.intellilearn.utils.mapper.*;
+import vn.edu.hcmut.intellilearn.utils.validator.AssignmentValidator;
 import vn.edu.hcmut.intellilearn.utils.validator.CourseValidator;
 import vn.edu.hcmut.intellilearn.utils.validator.ExamValidator;
 import vn.edu.hcmut.intellilearn.utils.validator.QuizValidator;
@@ -19,6 +22,7 @@ import java.util.UUID;
 class AssessmentManagerServiceImpl implements AssessmentManagerService {
     private final ExamManagerRepository examRepository;
     private final QuizManagerRepository quizRepository;
+    private final AssignmentManagerRepository assignmentRepository;
 
     private final LevelRepository levelRepository;
 
@@ -26,12 +30,15 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
     private final OptionMapper optionMapper;
     private final QuestionMapper questionMapper;
     private final ExamMapper examMapper;
+    private final AssignmentMapper assignmentMapper;
+    private final QuizMapper quizMapper;
 
     private final CourseValidator courseValidator;
     private final ExamValidator examValidator;
     private final QuizValidator quizValidator;
-    private final QuizMapper quizMapper;
+    private final AssignmentValidator assignmentValidator;
 
+    private final MinioService minioService;
 
     @Override
     public void createExam(UUID tutorId, ExamRequest exam) {
@@ -167,4 +174,45 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
         quizRepository.deleteQuiz(quizId);
     }
 
+    @Override
+    public void createAssignment(UUID tutorId, AssignmentRequest assignment) {
+        Course existedCourse = courseValidator.getCourseIfOwned(tutorId, assignment.getCourseId());
+        Assignment newAssignment = assignmentMapper.toAssignment(assignment);
+
+        var instructionUrl = minioService.uploadFile(assignment.getInstruction());
+        var guideLineUrl = minioService.uploadFile(assignment.getGradingGuidelines());
+        newAssignment.setInstruction(instructionUrl);
+        newAssignment.setGradingGuidelines(guideLineUrl);
+        newAssignment.setCourse(existedCourse);
+        assignmentRepository.insertAssignment(newAssignment);
+    }
+
+    @Override
+    public AssignmentResponse retrieveAssignment(UUID tutorId, UUID assignmentId) {
+        assignmentValidator.validateAssignmentOwnership(tutorId, assignmentId);
+        Assignment assignment = assignmentRepository.selectAssignment(assignmentId);
+        return assignmentMapper.toAssignmentResponse(assignment);
+    }
+
+    @Override
+    public void updateAssignment(UUID tutorId, UUID assignmentId, AssignmentRequest assignment) {
+        assignmentValidator.validateAssignmentOwnership(tutorId, assignmentId);
+        Assignment  oldAssignment = assignmentRepository.selectAssignment(assignmentId);
+        assignmentMapper.updateAssignment(assignment, oldAssignment);
+        if(assignment.getGradingGuidelines()!=null){
+            var guideLineUrl = minioService.uploadFile(assignment.getGradingGuidelines());
+            oldAssignment.setGradingGuidelines(guideLineUrl);
+        }
+        if(assignment.getInstruction()!=null){
+            var instructionUrl = minioService.uploadFile(assignment.getInstruction());
+            oldAssignment.setInstruction(instructionUrl);
+        }
+        assignmentRepository.updateAssignment(oldAssignment);
+    }
+
+    @Override
+    public void deleteAssignment(UUID tutorId, UUID assignmentId) {
+        assignmentValidator.validateAssignmentOwnership(tutorId, assignmentId);
+        assignmentRepository.deleteAssignment(assignmentId);
+    }
 }

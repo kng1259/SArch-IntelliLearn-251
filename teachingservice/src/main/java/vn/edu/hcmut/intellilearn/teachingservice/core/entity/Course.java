@@ -52,6 +52,9 @@ public class Course {
     @OneToMany(mappedBy = "course", orphanRemoval = true)
     private Set<Exam> exams = new LinkedHashSet<>();
 
+    @OneToMany(mappedBy = "course", orphanRemoval = true)
+    private Set<Assignment> assignments = new LinkedHashSet<>();
+
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();

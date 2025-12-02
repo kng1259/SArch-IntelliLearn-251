@@ -14,5 +14,8 @@ public interface AssessmentManagerService {
     public QuizResponse retrieveQuiz(UUID tutorId, UUID quizId);
     public void updateQuiz(UUID tutorId, UUID quizId, QuizUpdateRequest quiz);
     public void deleteQuiz(UUID tutorId, UUID quizId);
-
+    public void createAssignment(UUID tutorId, AssignmentRequest assignment);
+    public AssignmentResponse retrieveAssignment(UUID tutorId, UUID assignmentId);
+    public void updateAssignment(UUID tutorId, UUID assignmentId, AssignmentRequest assignment);
+    public void deleteAssignment(UUID tutorId, UUID assignmentId);
 }

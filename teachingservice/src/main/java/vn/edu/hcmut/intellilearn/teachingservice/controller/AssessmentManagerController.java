@@ -2,6 +2,7 @@ package vn.edu.hcmut.intellilearn.teachingservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.hcmut.intellilearn.teachingservice.controller.datatype.ApiResponse;
@@ -88,6 +89,43 @@ public class AssessmentManagerController {
         return ApiResponse.builder()
                 .success(true)
                 .message("Xóa bài quiz thành công")
+                .build();
+    }
+
+    @PostMapping(value = "/assignment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<?> postAssignment(@AuthenticationPrincipal KeycloakPrincipal principal, @Valid AssignmentRequest assignmentRequest) {
+        assessmentManagerService.createAssignment(principal.userId(), assignmentRequest);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Tạo assignment thành công")
+                .build();
+    }
+
+    @GetMapping("/assignment/{assignmentId}")
+    public ApiResponse<AssignmentResponse> getAssignment(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID assignmentId) {
+        var assignment = assessmentManagerService.retrieveAssignment(principal.userId(), assignmentId);
+        return ApiResponse.<AssignmentResponse>builder()
+                .success(true)
+                .message("Lấy assignment thành công")
+                .data(assignment)
+                .build();
+    }
+
+    @PutMapping(value = "/assignment/{assigmentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<?> putAssignment(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID assigmentId, @Valid AssignmentRequest assignmentRequest) {
+        assessmentManagerService.updateAssignment(principal.userId(), assigmentId, assignmentRequest);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Cập nhật assignment thành công")
+                .build();
+    }
+
+    @DeleteMapping("/assignment/{assignmentId}")
+    public ApiResponse<?> deleteAssignment(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID assignmentId) {
+        assessmentManagerService.deleteAssignment(principal.userId(), assignmentId);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Xóa assignment thành công")
                 .build();
     }
 }
