@@ -1,6 +1,5 @@
 package vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager;
 
-import jakarta.transaction.Transactional;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager.datatype.*;
 
 import java.util.List;
@@ -22,4 +21,5 @@ public interface AssessmentManagerService {
     public AssignmentResponse retrieveAssignment(UUID tutorId, UUID assignmentId);
     public void updateAssignment(UUID tutorId, UUID assignmentId, AssignmentRequest assignment);
     public void deleteAssignment(UUID tutorId, UUID assignmentId);
+    public void gradingSubmission(UUID tutorId,UUID studentId, UUID assignmentId, GradingRequest gradingRequest);
 }

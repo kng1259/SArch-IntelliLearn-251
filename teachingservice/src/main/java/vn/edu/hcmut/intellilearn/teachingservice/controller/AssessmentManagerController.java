@@ -159,6 +159,17 @@ public class AssessmentManagerController {
                 .build();
     }
 
-//    @PatchMapping("/submission/{submissionId}")
-
+    @PatchMapping("/submission/{assignmentId}/{studentId}")
+    public ApiResponse<?> gradingSubmission(
+            @AuthenticationPrincipal KeycloakPrincipal principal,
+            @PathVariable UUID assignmentId,
+            @PathVariable UUID studentId,
+            @Valid @RequestBody GradingRequest gradingRequest
+    ) {
+        assessmentManagerService.gradingSubmission(principal.userId(), studentId, assignmentId, gradingRequest);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Chấm điểm assignment thành công")
+                .build();
+    }
 }

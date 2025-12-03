@@ -19,7 +19,7 @@ import java.util.UUID;
 public class TeachingAssistantController {
     public final TeachingAssistantService teachingAssistantService;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR')")
     @PostMapping("/course")
     public ApiResponse<CourseResponse> postCourse(@AuthenticationPrincipal KeycloakPrincipal principal, @Valid @RequestBody CourseRequest courseRequest){
         var createdCourse = teachingAssistantService.createCourse(principal.userId(), courseRequest);
@@ -41,7 +41,7 @@ public class TeachingAssistantController {
                 .build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR')")
     @PutMapping("/course/{courseId}")
     public ApiResponse<CourseResponse> updateCourse(@AuthenticationPrincipal KeycloakPrincipal principal,@PathVariable UUID courseId, @Valid @RequestBody CourseRequest courseRequest){
         var updatedCourse = teachingAssistantService.updateCourse(principal.userId(), courseId, courseRequest);
@@ -52,7 +52,7 @@ public class TeachingAssistantController {
                 .build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR')")
     @PostMapping("/feedback")
     public ApiResponse<FeedbackRequest> postFeedback(@AuthenticationPrincipal KeycloakPrincipal principal,@Valid @RequestBody FeedbackRequest feedbackRequest){
         var createdFeedback = teachingAssistantService.createFeedback(principal.userId(), feedbackRequest);
@@ -63,7 +63,7 @@ public class TeachingAssistantController {
                 .build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR')")
     @GetMapping("/student/course/{courseId}")
     public ApiResponse<List<StudentResponse>> getCourseStudents(@PathVariable UUID courseId){
         var students = teachingAssistantService.retrieveCourseStudents(courseId);
@@ -74,7 +74,7 @@ public class TeachingAssistantController {
                 .build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR')")
     @PostMapping(value="/learning-material", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<LearningMaterialResponse> postLearningMaterial(@AuthenticationPrincipal KeycloakPrincipal principal, @Valid LearningMaterialRequest learningMaterialRequest){
         var learningMaterial = teachingAssistantService.createLearningMaterial(principal.userId(), learningMaterialRequest);
@@ -85,7 +85,7 @@ public class TeachingAssistantController {
                 .build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    @PreAuthorize("hasAnyRole('TUTOR')")
     @DeleteMapping("/learning-material/{materialId}")
     public ApiResponse<?> deleteLearningMaterial(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID materialId){
         teachingAssistantService.deleteLearningMaterial(principal.userId(), materialId);

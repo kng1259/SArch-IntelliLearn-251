@@ -3,7 +3,9 @@ package vn.edu.hcmut.intellilearn.teachingservice.core.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.Hibernate;
 
@@ -14,6 +16,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @Embeddable
+@NoArgsConstructor
+@AllArgsConstructor
 public class SubmissionId implements Serializable {
     private static final long serialVersionUID = 5054270310181002238L;
 
@@ -23,7 +27,7 @@ public class SubmissionId implements Serializable {
 
     @NotNull
     @Column(name = "file_name", nullable = false)
-    private String fileUrl;
+    private String fileName;
 
     @NotNull
     @Column(name = "assignment_id", nullable = false)
@@ -36,11 +40,11 @@ public class SubmissionId implements Serializable {
         SubmissionId entity = (SubmissionId) o;
         return Objects.equals(this.studentId, entity.studentId) &&
                 Objects.equals(this.assignmentId, entity.assignmentId)&&
-                Objects.equals(this.fileUrl, entity.fileUrl);
+                Objects.equals(this.fileName, entity.fileName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(studentId, fileUrl, assignmentId);
+        return Objects.hash(studentId, fileName, assignmentId);
     }
 }

@@ -11,7 +11,6 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class CourseValidator {
-
     private final CourseRepository courseRepository;
 
     public void validateCourseOwnership(UUID tutorId, UUID courseId) {

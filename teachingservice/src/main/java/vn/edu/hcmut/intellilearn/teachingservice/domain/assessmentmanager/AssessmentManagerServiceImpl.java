@@ -1,7 +1,6 @@
 package vn.edu.hcmut.intellilearn.teachingservice.domain.assessmentmanager;
 
 import lombok.RequiredArgsConstructor;
-import org.hibernate.tool.schema.internal.exec.AbstractScriptSourceInput;
 import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.*;
 import vn.edu.hcmut.intellilearn.teachingservice.core.repository.LevelRepository;
@@ -25,6 +24,7 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
     private final ExamManagerRepository examRepository;
     private final QuizManagerRepository quizRepository;
     private final AssignmentManagerRepository assignmentRepository;
+    private final SubmissionManagerRepository submissionRepository;
 
     private final LevelRepository levelRepository;
 
@@ -286,5 +286,17 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
     public void deleteAssignment(UUID tutorId, UUID assignmentId) {
         assignmentValidator.validateAssignmentOwnership(tutorId, assignmentId);
         assignmentRepository.deleteAssignment(assignmentId);
+    }
+
+    @Override
+    public void gradingSubmission(UUID tutorId, UUID studentId, UUID assignmentId, GradingRequest gradingRequest) {
+        SubmissionId submissionId = new SubmissionId();
+        submissionId.setAssignmentId(assignmentId);
+        submissionId.setStudentId(studentId);
+        submissionId.setFileName(gradingRequest.getFileName());
+        Submission oldSubmission = submissionRepository.getSubmission(submissionId);
+        oldSubmission.setScore(gradingRequest.getScore());
+        oldSubmission.setFeedback(gradingRequest.getFeedback());
+        submissionRepository.gradingSubmission(oldSubmission);
     }
 }
