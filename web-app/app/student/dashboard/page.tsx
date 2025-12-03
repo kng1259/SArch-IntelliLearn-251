@@ -21,21 +21,35 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { mockCourses } from "@/data/mockData";
 import Image from "next/image";
-import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import authService, { UserInfo } from "@/lib/services/authService";
 
 export default function StudentDashboard() {
   const router = useRouter();
   const enrolledCourses = mockCourses.filter((c) => c.isEnrolled);
   const recommendedCourses = mockCourses.filter((c) => !c.isEnrolled);
-  const authContext = useAuth();
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   const avgProgress =
     enrolledCourses.reduce((sum, c) => sum + (c.progress || 0), 0) /
       enrolledCourses.length || 0;
 
-  const onSignOut = () => {
-    authContext.logout();
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const res = await authService.getUserInfo();
+        console.log("User info:", res);
+        setUserInfo(res);
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+      }
+    };
+    fetchUserInfo();
+  }, []);
+
+  const onSignOut = async () => {
+    await authService.logout();
     console.log("User signed out");
   };
 
@@ -83,7 +97,7 @@ export default function StudentDashboard() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-black">
-            Welcome back, {authContext.user?.name}!
+            Welcome back, {userInfo?.name}!
           </h2>
           <p className="text-gray-600 mt-1">Continue your learning journey</p>
         </div>

@@ -1,23 +1,21 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import authService from "@/lib/services/authService";
+import { redirect } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
-  const authContext = useAuth();
-  const router = useRouter();
+  useEffect(() => {
+    if (!authService.isAuthenticated()) {
+      redirect("/signin");
+    }
 
-  console.log("Current user:", authContext);
+    if (authService.isStudent()) {
+      redirect("/student/dashboard");
+    }
 
-  if (!authContext.user) {
-    router.push("/signin");
-  }
-
-  if (authContext.user?.role === "student") {
-    router.push("/student/dashboard");
-  }
-
-  if (authContext.user?.role === "tutor") {
-    router.push("/tutor/dashboard");
-  }
+    if (authService.isTutor()) {
+      redirect("/tutor/dashboard");
+    }
+  }, []);
 }

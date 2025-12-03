@@ -32,21 +32,18 @@ import { mockCourses, mockFeedbacks } from "@/data/mockData";
 import { use, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 
 export default function CourseDetails({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { user } = useAuth();
   const router = useRouter();
   const { id } = use(params);
   const course = mockCourses.find((c) => c.id === id);
   const feedbacks = useMemo(
-    () =>
-      mockFeedbacks.find((f) => f.courseId === id && f.studentId === user?.id),
-    [id, user?.id]
+    () => mockFeedbacks.find((f) => f.courseId === id && f.studentId === "101"),
+    [id]
   );
   const [enrolled, setEnrolled] = useState(course?.isEnrolled || false);
 
