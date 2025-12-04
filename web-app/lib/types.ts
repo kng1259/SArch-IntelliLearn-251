@@ -6,7 +6,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'instructor' | 'student' | 'admin';
+  role: "instructor" | "student" | "admin";
   avatar?: string;
   createdAt: string;
   updatedAt: string;
@@ -38,7 +38,7 @@ export interface CourseWithStats {
   instructorName: string;
   startDate: string;
   endDate: string;
-  status: 'draft' | 'published' | 'archived';
+  status: "draft" | "published" | "archived";
   enrollmentCount: number;
   averageGrade: number;
   completionRate: number;
@@ -50,7 +50,7 @@ export interface CourseWithStats {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'info' | 'warning' | 'success' | 'error';
+  type: "info" | "warning" | "success" | "error";
   title: string;
   message: string;
   read: boolean;
@@ -62,7 +62,14 @@ export interface Notification {
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'date' | 'textarea' | 'select';
+  type:
+    | "text"
+    | "email"
+    | "password"
+    | "number"
+    | "date"
+    | "textarea"
+    | "select";
   required?: boolean;
   placeholder?: string;
   options?: { value: string; label: string }[];
@@ -78,7 +85,7 @@ export interface FormField {
 export interface FileUpload {
   file: File;
   progress: number;
-  status: 'pending' | 'uploading' | 'completed' | 'error';
+  status: "pending" | "uploading" | "completed" | "error";
   url?: string;
   error?: string;
 }
@@ -90,6 +97,14 @@ export interface UploadedFile {
   size: number;
   type: string;
   uploadedAt: string;
+}
+
+export interface Feedback {
+  id: string;
+  teacherId: string;
+  courseId: string;
+  createdAt: string;
+  content: string;
 }
 
 export default {};

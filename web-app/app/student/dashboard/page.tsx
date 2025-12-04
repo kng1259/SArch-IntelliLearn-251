@@ -77,7 +77,7 @@ export default function StudentDashboard() {
               <BookOpen className="w-8 h-8 text-indigo-600" />
               <h1 className="text-indigo-900">EduLearn LMS</h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 ">
               <Button
                 className="hover:cursor-pointer"
                 variant="ghost"
@@ -212,8 +212,8 @@ export default function StudentDashboard() {
                   </div>
                 </div>
                 <CardHeader>
-                  <CardTitle className="line-clamp-2">{course.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">
+                  <CardTitle className="line-clamp-2 text-black">{course.title}</CardTitle>
+                  <CardDescription className="line-clamp-2 text-gray-400">
                     {course.description}
                   </CardDescription>
                 </CardHeader>
@@ -232,7 +232,8 @@ export default function StudentDashboard() {
                       Instructor: {course.tutorName}
                     </div>
                     <Button
-                      className="w-full"
+                      className="w-full bg-black text-white!"
+                      variant={"ghost"}
                       onClick={() =>
                         console.log(`Continue learning ${course.id}`)
                       }
@@ -278,11 +279,11 @@ export default function StudentDashboard() {
                     </div>
                     <CardHeader>
                       <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="line-clamp-2">
+                        <CardTitle className="line-clamp-2 text-black">
                           {course.name}
                         </CardTitle>
                       </div>
-                      <CardDescription className="line-clamp-2">
+                      <CardDescription className="line-clamp-2 text-gray-400">
                         {course.description}
                       </CardDescription>
                     </CardHeader>
