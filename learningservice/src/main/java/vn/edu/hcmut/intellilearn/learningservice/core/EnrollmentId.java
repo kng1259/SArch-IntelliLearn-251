@@ -3,17 +3,19 @@ package vn.edu.hcmut.intellilearn.learningservice.core;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.Hibernate;
 
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-@Getter
-@Setter
+//@Getter
+//@Setter
+@Data
 @Embeddable
+@AllArgsConstructor
+@NoArgsConstructor
 public class EnrollmentId implements Serializable {
     private static final long serialVersionUID = 1001703343958923476L;
     @NotNull

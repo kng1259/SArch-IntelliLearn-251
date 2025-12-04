@@ -9,6 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, EnrollmentId> {
-    boolean existsById(EnrollmentId id);
     boolean existsById_StudentIdAndId_CourseId(UUID studentId, UUID courseId);
 }

@@ -7,9 +7,8 @@ import java.util.TimeZone;
 
 @SpringBootApplication
 public class LearningserviceApplication {
-//	TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
 	public static void main(String[] args) {
+		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
 		SpringApplication.run(LearningserviceApplication.class, args);
 	}
-
 }

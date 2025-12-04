@@ -20,8 +20,8 @@ spring:
 keycloak:
   server-url: http://127.0.0.1:8083/
   realm: intellilearn
-  client-id: nginx
-  client-secret: "w5upehqrRr3xTL57IRAX0Vn5U6zGitbr"
+  client-id: teaching-service
+  client-secret: "n0WJUsMDiXlccshts3qSIzext4IpXhbA"
 
 management:
   endpoints:
