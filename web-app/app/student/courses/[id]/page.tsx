@@ -25,12 +25,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { mockCourses, mockFeedbacks } from "@/data/mockData";
-import { use, useEffect, useMemo, useState } from "react";
+import { mockCourses } from "@/data/mockData";
+import { use, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import courseService, { Course } from "@/lib/services/courseService";
 import Loader from "@/app/components/Loader";
+import { Feedback } from "@/lib/types";
 
 export default function CourseDetails({
   params,
@@ -41,18 +42,16 @@ export default function CourseDetails({
   const { id } = use(params);
   const [course, setCourse] = useState<Course | null>(null);
   const mockCourse = mockCourses.find((c) => c.id === "1");
-  const feedbacks = useMemo(
-    () => mockFeedbacks.find((f) => f.courseId === id && f.studentId === "101"),
-    [id]
-  );
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [enrolled, setEnrolled] = useState(false);
 
   useEffect(() => {
     const getCourseDetails = async () => {
       try {
         const res = await courseService.getCourseDetails(id);
-        console.log("Course details:", res);
         setCourse(res);
+        const courseFeedbacks = await courseService.getCourseFeedbacks(id);
+        setFeedbacks(courseFeedbacks);
       } catch (error) {
         console.error("Error fetching course details:", error);
       } finally {
@@ -62,7 +61,12 @@ export default function CourseDetails({
   }, [id]);
 
   const handleEnroll = () => {
-    setEnrolled(true);
+    try {
+      courseService.enrollCourse(id);
+      setEnrolled(true);
+    } catch (error) {
+      console.error("Error enrolling in course:", error);
+    }
   };
 
   const handleStartQuiz = (quizId: string) => {
@@ -85,6 +89,8 @@ export default function CourseDetails({
         return <FileText className="w-4 h-4" />;
     }
   };
+
+  console.log("Course feedbacks:", feedbacks);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -156,7 +162,9 @@ export default function CourseDetails({
               <div className="lg:col-span-1">
                 <Card className="sticky top-24">
                   <CardHeader>
-                    <CardTitle>Course Progress</CardTitle>
+                    <CardTitle className="text-black">
+                      Course Progress
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {enrolled ? (
@@ -176,7 +184,7 @@ export default function CourseDetails({
                         </div>
                         <div className="pt-4 border-t space-y-2">
                           <Button
-                            className="w-full"
+                            className="w-full text-black"
                             onClick={() =>
                               router.push(
                                 `/student/my-courses/${course.id}/content`
@@ -186,7 +194,7 @@ export default function CourseDetails({
                             Continue Learning
                           </Button>
                           <Button
-                            className="w-full"
+                            className="w-full text-white"
                             variant="outline"
                             onClick={() =>
                               router.push(
@@ -203,7 +211,11 @@ export default function CourseDetails({
                         <p className="text-sm text-gray-600">
                           Start learning today and gain new skills
                         </p>
-                        <Button className="w-full" onClick={handleEnroll}>
+                        <Button
+                          variant={"ghost"}
+                          className="w-full bg-black text-white!"
+                          onClick={handleEnroll}
+                        >
                           Enroll in Course
                         </Button>
                       </>
@@ -438,37 +450,36 @@ export default function CourseDetails({
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-6 pt-4">
-                        {feedbacks?.generalFeedbacks &&
-                          feedbacks.generalFeedbacks.length > 0 && (
-                            <div>
-                              <h4 className="text-black mb-3">General</h4>
-                              <div className="space-y-2">
-                                {feedbacks.generalFeedbacks.map((fb) => (
-                                  <Card key={fb.id}>
-                                    <CardHeader>
-                                      <CardTitle className="flex items-center gap-2">
-                                        {fb.title}{" "}
-                                        {fb.date && (
-                                          <span>
-                                            (
-                                            {new Date(
-                                              fb.date
-                                            ).toLocaleDateString()}
-                                            )
-                                          </span>
-                                        )}
-                                      </CardTitle>
-                                      <CardDescription>
-                                        {fb.message}
-                                      </CardDescription>
-                                    </CardHeader>
-                                    <CardContent></CardContent>
-                                  </Card>
-                                ))}
-                              </div>
+                        {feedbacks && feedbacks.length > 0 && (
+                          <div>
+                            <div className="space-y-2">
+                              {feedbacks.map((fb) => (
+                                <Card key={fb.id}>
+                                  <CardHeader>
+                                    <CardTitle className="flex items-center justify-between gap-2">
+                                      <span className="text-black">
+                                        By teacherId: {fb.teacherId}
+                                      </span>
+                                      <span>
+                                        {fb.createdAt.split("T")[0]} at{" "}
+                                        {fb.createdAt
+                                          .split("T")[1]
+                                          .split(":")
+                                          .slice(0, 2)
+                                          .join(":")}
+                                      </span>
+                                    </CardTitle>
+                                    <CardDescription>
+                                      {fb.content}
+                                    </CardDescription>
+                                  </CardHeader>
+                                  <CardContent></CardContent>
+                                </Card>
+                              ))}
                             </div>
-                          )}
-                        {feedbacks?.quizFeedbacks &&
+                          </div>
+                        )}
+                        {/* {feedbacks?.quizFeedbacks &&
                           feedbacks.quizFeedbacks.length > 0 && (
                             <div>
                               <h4 className="text-black mb-3">Quizzes</h4>
@@ -498,8 +509,8 @@ export default function CourseDetails({
                                 ))}
                               </div>
                             </div>
-                          )}
-                        {feedbacks?.assignmentFeedbacks &&
+                          )} */}
+                        {/* {feedbacks?.assignmentFeedbacks &&
                           feedbacks.assignmentFeedbacks.length > 0 && (
                             <div>
                               <h4 className="text-black mb-3">Assignments</h4>
@@ -529,7 +540,7 @@ export default function CourseDetails({
                                 ))}
                               </div>
                             </div>
-                          )}
+                          )} */}
                       </div>
                     </CardContent>
                   </Card>

@@ -1,7 +1,8 @@
 // Course Service - API calls for course management (Teaching Service)
 
-import { api } from '../api';
-import studentApi from '../studentApi';
+import { api } from "../api";
+import studentApi from "../studentApi";
+import { Feedback } from "../types";
 
 // API Response wrapper from backend
 export interface ApiResponse<T> {
@@ -67,12 +68,15 @@ const courseService = {
   // POST /course
   createCourse: async (courseData: CourseRequest): Promise<Course> => {
     // api.post already unwraps ApiResponse.data, so we get Course directly
-    return api.post<Course>('/course', courseData);
+    return api.post<Course>("/course", courseData);
   },
 
   // Update course
   // PUT /course/{courseId}
-  updateCourse: async (courseId: string, courseData: CourseRequest): Promise<Course> => {
+  updateCourse: async (
+    courseId: string,
+    courseData: CourseRequest
+  ): Promise<Course> => {
     return api.put<Course>(`/course/${courseId}`, courseData);
   },
 
@@ -84,8 +88,10 @@ const courseService = {
 
   // Learning Materials
   // POST /learning-material
-  createLearningMaterial: async (material: LearningMaterialRequest): Promise<LearningMaterial> => {
-    return api.post<LearningMaterial>('/learning-material', material);
+  createLearningMaterial: async (
+    material: LearningMaterialRequest
+  ): Promise<LearningMaterial> => {
+    return api.post<LearningMaterial>("/learning-material", material);
   },
 
   // DELETE /learning-material/{materialId}
@@ -95,8 +101,10 @@ const courseService = {
 
   // Feedback
   // POST /feedback
-  createFeedback: async (feedback: FeedbackRequest): Promise<FeedbackRequest> => {
-    return api.post<FeedbackRequest>('/feedback', feedback);
+  createFeedback: async (
+    feedback: FeedbackRequest
+  ): Promise<FeedbackRequest> => {
+    return api.post<FeedbackRequest>("/feedback", feedback);
   },
 
   getRecommendedCourses: async (): Promise<Course[]> => {
@@ -107,9 +115,25 @@ const courseService = {
   },
 
   getCourseDetails: async (courseId: string): Promise<Course> => {
-    const response = await studentApi.get<Course>(`/learning/course/${courseId}`);
+    const response = await studentApi.get<Course>(
+      `/learning/course/${courseId}`
+    );
     return response;
-  }
+  },
+
+  getCourseFeedbacks: async (courseId: string): Promise<Feedback[]> => {
+    const response = await studentApi.get<Feedback[]>(
+      `/learning/course/${courseId}/feedback`
+    );
+    return response;
+  },
+
+  enrollCourse: async (courseId: string): Promise<string> => {
+    const response = await studentApi.post<string>(
+      `/learning/course/${courseId}/enroll`
+    );
+    return response;
+  },
 };
 
 export default courseService;
