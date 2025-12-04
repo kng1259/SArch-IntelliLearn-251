@@ -7,9 +7,6 @@ import {
   FileText,
   ClipboardList,
   CheckCircle,
-  Clock,
-  Star,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
