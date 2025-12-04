@@ -22,18 +22,31 @@ import { Badge } from "@/components/ui/badge";
 import { mockCourses } from "@/data/mockData";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import authService, { UserInfo } from "@/lib/services/authService";
+import courseService, { Course } from "@/lib/services/courseService";
 
 export default function StudentDashboard() {
   const router = useRouter();
   const enrolledCourses = mockCourses.filter((c) => c.isEnrolled);
-  const recommendedCourses = mockCourses.filter((c) => !c.isEnrolled);
+  const [recommendedCourses, setRecommendedCourses] = useState<Course[] | null>(
+    null
+  );
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   const avgProgress =
     enrolledCourses.reduce((sum, c) => sum + (c.progress || 0), 0) /
       enrolledCourses.length || 0;
+
+  const getRecommendedCourses = async () => {
+    try {
+      const res = await courseService.getRecommendedCourses();
+      console.log("Recommended courses:", res);
+      setRecommendedCourses(res);
+    } catch (error) {
+      console.error("Error fetching recommended courses:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -41,6 +54,7 @@ export default function StudentDashboard() {
         const res = await authService.getUserInfo();
         console.log("User info:", res);
         setUserInfo(res);
+        getRecommendedCourses();
       } catch (error) {
         console.error("Error fetching user info:", error);
       }
@@ -49,7 +63,7 @@ export default function StudentDashboard() {
   }, []);
 
   const onSignOut = async () => {
-    await authService.logout();
+    await authService.logout().then(() => router.push("/signin"));
     console.log("User signed out");
   };
 
@@ -96,9 +110,7 @@ export default function StudentDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-black">
-            Welcome back, {userInfo?.name}!
-          </h2>
+          <h2 className="text-black">Welcome back, {userInfo?.name}!</h2>
           <p className="text-gray-600 mt-1">Continue your learning journey</p>
         </div>
 
@@ -245,51 +257,58 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {recommendedCourses.map((course) => (
-              <Card
-                key={course.id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                  <Image
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                    width={800}
-                    height={100}
-                  />
-                </div>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="line-clamp-2">
-                      {course.title}
-                    </CardTitle>
-                  </div>
-                  <CardDescription className="line-clamp-2">
-                    {course.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">{course.duration}</span>
-                      <div className="flex items-center gap-1">
-                        <Award className="w-4 h-4 text-yellow-500" />
-                        <span>{course.rating}</span>
-                      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Suspense
+              fallback={<div className="text-xl text-black">Loading...</div>}
+            >
+              {recommendedCourses &&
+                recommendedCourses.map((course) => (
+                  <Card
+                    key={course.id}
+                    className="hover:shadow-lg transition-shadow"
+                  >
+                    <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                      <Image
+                        src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800"
+                        alt={course.name}
+                        className="w-full h-full object-cover"
+                        width={800}
+                        height={100}
+                      />
                     </div>
-                    <Button
-                      className="w-full"
-                      variant="outline"
-                      onClick={() => console.log(`View course ${course.id}`)}
-                    >
-                      View Course
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="line-clamp-2">
+                          {course.name}
+                        </CardTitle>
+                      </div>
+                      <CardDescription className="line-clamp-2">
+                        {course.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">
+                            {course.startAt.split("T")[0]} -{" "}
+                            {course.endAt?.split("T")[0]}
+                          </span>
+                        </div>
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={() => {
+                            router.push(`/student/courses/${course.id}`);
+                            console.log(`View course ${course.id}`);
+                          }}
+                        >
+                          View Course
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+            </Suspense>
           </div>
         </section>
       </main>

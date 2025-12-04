@@ -1,6 +1,7 @@
 // Course Service - API calls for course management (Teaching Service)
 
 import { api } from '../api';
+import studentApi from '../studentApi';
 
 // API Response wrapper from backend
 export interface ApiResponse<T> {
@@ -17,6 +18,7 @@ export interface Course {
   startAt: string; // ISO datetime
   endAt?: string; // ISO datetime
   createdAt?: string; // ISO datetime
+  tutorId?: string;
 }
 
 export interface CourseRequest {
@@ -100,6 +102,18 @@ const courseService = {
     const response = await api.post<ApiResponse<FeedbackRequest>>('/feedback', feedback);
     return response.data;
   },
+
+  getRecommendedCourses: async (): Promise<Course[]> => {
+    const response = await studentApi.get<Course[]>(
+      "/learning/course/recommended"
+    );
+    return response;
+  },
+
+  getCourseDetails: async (courseId: string): Promise<Course> => {
+    const response = await studentApi.get<Course>(`/learning/course/${courseId}`);
+    return response;
+  }
 };
 
 export default courseService;

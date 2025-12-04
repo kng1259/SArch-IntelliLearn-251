@@ -29,9 +29,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { mockCourses, mockFeedbacks } from "@/data/mockData";
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import courseService, { Course } from "@/lib/services/courseService";
 
 export default function CourseDetails({
   params,
@@ -40,12 +41,26 @@ export default function CourseDetails({
 }) {
   const router = useRouter();
   const { id } = use(params);
-  const course = mockCourses.find((c) => c.id === id);
+  const [course, setCourse] = useState<Course | null>(null);
+  const mockCourse = mockCourses.find((c) => c.id === '1');
   const feedbacks = useMemo(
     () => mockFeedbacks.find((f) => f.courseId === id && f.studentId === "101"),
     [id]
   );
-  const [enrolled, setEnrolled] = useState(course?.isEnrolled || false);
+  const [enrolled, setEnrolled] = useState(false);
+
+  useEffect(() => {
+    const getCourseDetails = async () => {
+      try {
+        const res = await courseService.getCourseDetails(id);
+        console.log("Course details:", res);
+        setCourse(res);
+      } catch (error) {
+        console.error("Error fetching course details:", error);
+      }
+    };
+    getCourseDetails();
+  }, [id]);
 
   if (!course) {
     return <div>Course not found</div>;
@@ -99,15 +114,15 @@ export default function CourseDetails({
           <div className="lg:col-span-2">
             <div className="aspect-video relative overflow-hidden rounded-lg mb-6">
               <Image
-                src={course.thumbnail}
-                alt={course.title}
+                src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800"
+                alt={course.name}
                 className="w-full h-full object-cover"
                 width={1920}
                 height={100}
               />
             </div>
             <div className="flex items-center gap-2 mb-4">
-              <Badge>{course.category}</Badge>
+              {/* <Badge>{course.category}</Badge> */}
               {enrolled && (
                 <Badge
                   variant="outline"
@@ -117,10 +132,10 @@ export default function CourseDetails({
                 </Badge>
               )}
             </div>
-            <h2 className="text-black mb-4">{course.title}</h2>
+            <h2 className="text-black mb-4">{course.name}</h2>
             <p className="text-gray-600 mb-6">{course.description}</p>
 
-            <div className="flex items-center gap-6 text-sm text-gray-600 mb-6">
+            {/* <div className="flex items-center gap-6 text-sm text-gray-600 mb-6">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 <span>{course.enrolledStudents.toLocaleString()} students</span>
@@ -133,11 +148,11 @@ export default function CourseDetails({
                 <Clock className="w-4 h-4" />
                 <span>{course.duration}</span>
               </div>
-            </div>
+            </div> */}
 
             <p className="text-sm text-gray-600">
               Instructor:{" "}
-              <span className="text-gray-900">{course.tutorName}</span>
+              <span className="text-gray-900">{course.tutorId}</span>
             </p>
           </div>
 
@@ -155,10 +170,12 @@ export default function CourseDetails({
                           Overall Progress
                         </span>
                         <span className="text-indigo-600">
-                          {course.progress}%
+                          {/* {course.progress}% */}
+                          60%
                         </span>
                       </div>
-                      <Progress value={course.progress} className="h-2" />
+                      {/* <Progress value={course.progress} className="h-2" /> */}
+                      <Progress value={60} className="h-2" />
                     </div>
                     <div className="pt-4 border-t space-y-2">
                       <Button
@@ -207,7 +224,7 @@ export default function CourseDetails({
 
             <TabsContent value="content" className="space-y-4">
               <Accordion type="single" collapsible className="space-y-4">
-                {course.modules?.map((module, index) => (
+                {mockCourse?.modules?.map((module, index) => (
                   <AccordionItem
                     key={module.id}
                     value={module.id}
