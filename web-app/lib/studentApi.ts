@@ -68,7 +68,13 @@ async function fetchApi<T>(
 
     // Handle empty responses
     const contentType = response.headers.get("content-type");
+
+    if (contentType === "text/csv") {
+      return response as unknown as T;
+    }
+
     if (!contentType || !contentType.includes("application/json")) {
+      console.warn("API response is empty");
       return {} as T;
     }
 

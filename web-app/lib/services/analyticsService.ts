@@ -2,6 +2,7 @@
 // This will be a placeholder for future analytics features
 
 import { api } from '../api';
+import studentApi from '../studentApi';
 
 export interface CourseAnalytics {
   courseId: string;
@@ -24,6 +25,18 @@ const analyticsService = {
     console.warn('Analytics not yet implemented in backend');
     return [];
   },
+
+  getStudentAnalyticsYearly: async (): Promise<any> => {
+    const res = await studentApi.get(`/learning/analyzer/reports/yearly`);
+
+    return res;
+  },
+
+  getStudentAnalyticsMonthly: async (): Promise<any> => {
+    const res = await studentApi.get(`/learning/analyzer/reports/monthly`);
+
+    return res;
+  }
 };
 
 export default analyticsService;

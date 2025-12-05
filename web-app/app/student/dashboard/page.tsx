@@ -36,7 +36,7 @@ export default function StudentDashboard() {
   const getRecommendedCourses = async () => {
     try {
       const res = await courseService.getRecommendedCourses();
-      console.log("Recommended courses:", res);
+      // console.log("Recommended courses:", res);
       setRecommendedCourses(res);
     } catch (error) {
       console.error("Error fetching recommended courses:", error);
@@ -46,7 +46,7 @@ export default function StudentDashboard() {
   const getEnrolledCourse = async () => {
     try {
       const res = await courseService.getEnrolledCourses();
-      console.log("Enrolled courses:", res);
+      // console.log("Enrolled courses:", res);
       setEnrolledCourses(res);
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
@@ -57,7 +57,7 @@ export default function StudentDashboard() {
     const fetchUserInfo = async () => {
       try {
         const res = await authService.getUserInfo();
-        console.log("User info:", res);
+        // console.log("User info:", res);
         setUserInfo(res);
         getRecommendedCourses();
         getEnrolledCourse();
@@ -164,7 +164,7 @@ export default function StudentDashboard() {
             </CardContent>
           </Card> */}
 
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-gray-600">
                 Assignments Due
@@ -176,7 +176,7 @@ export default function StudentDashboard() {
                 <Clock className="w-4 h-4 text-orange-500" />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card>
             <CardHeader className="pb-3">
@@ -188,7 +188,7 @@ export default function StudentDashboard() {
               <Button
                 variant="ghost"
                 className="p-0 h-auto hover:bg-transparent"
-                onClick={() => console.log("View Analytics")}
+                onClick={() => router.push("/student/analysis")}
               >
                 <div className="flex items-baseline gap-2">
                   <span className="text-indigo-600">View Analytics</span>

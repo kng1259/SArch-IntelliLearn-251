@@ -69,6 +69,7 @@ const CourseDetail = ({
     try {
       courseService.enrollCourse(id);
       setEnrolled(true);
+      router.push(`/student/my-courses/${id}`);
     } catch (error) {
       console.error("Error enrolling in course:", error);
     }
