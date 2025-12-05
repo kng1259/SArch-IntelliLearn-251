@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useLayoutEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import assessmentService, {
 } from "@/lib/services/assessmentService";
 import Loader from "@/app/components/Loader";
 import { useRouter } from "next/navigation";
+import { convertSecondsToMinutes } from "@/lib/utils";
 
 const answerInit: questionAnswer = {
   questionId: "",
@@ -45,6 +46,19 @@ const TakeTest = ({
   const [selectedAnswer, setSelectedAnswer] =
     useState<questionAnswer>(answerInit);
 
+  const [timer, setTimer] = useState<number>(0);
+
+  useLayoutEffect(() => {
+    const interval = setInterval(() => {
+        if(timer === 0) {
+          clearInterval(interval);
+          handleSubmit(answers);
+        }
+      setTimer((prevTimer) => prevTimer - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  });
+
   const router = useRouter();
 
   const fetchTestInfo = useEffectEvent(async () => {
@@ -57,6 +71,7 @@ const TakeTest = ({
         res = await assessmentService.attempExam(testId);
       }
       setTestInfo(res);
+      setTimer(res.duration * 60);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -211,7 +226,7 @@ const TakeTest = ({
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <Clock className="w-4 h-4" />
-              <span>{testInfo.duration} min</span>
+              <span>{convertSecondsToMinutes(timer)} min</span>
             </div>
           </div>
           <div className="space-y-2">

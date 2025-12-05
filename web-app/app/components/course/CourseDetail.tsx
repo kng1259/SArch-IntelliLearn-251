@@ -133,6 +133,8 @@ const CourseDetail = ({
       console.log(res);
     } catch (error) {
       console.error("Error uploading assignment:", error);
+    } finally {
+      setFiles([]);
     }
   };
 
