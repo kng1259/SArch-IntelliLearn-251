@@ -21,6 +21,57 @@ export interface Course {
   createdAt?: string; // ISO datetime
   tutorId?: string;
 }
+export interface CourseData {
+  course: Course;
+  materials?: Material[];
+  assignments?: Assignment[];
+  quizzes?: StudentTest[];
+  exams?: StudentTest[];
+}
+
+interface Material {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Assignment {
+  id: string;
+  name: string;
+  description: string;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+  instruction: string;
+  gradingGuidelines: string;
+}
+
+interface QuestionOption {
+  order: number;
+  value: string;
+  correct: boolean;
+}
+
+interface Question {
+  id: string;
+  content: string;
+  options: QuestionOption[];
+}
+
+export interface StudentTest {
+  id: string;
+  name: string;
+  description: string;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+  duration: number;
+  questions: Question[];
+  level?: string;
+  attemptId: string;
+}
 
 export interface CourseRequest {
   name: string;
@@ -121,9 +172,9 @@ const courseService = {
     return response;
   },
 
-  getCourseDetails: async (courseId: string): Promise<Course> => {
-    const response = await studentApi.get<Course>(
-      `/learning/course/${courseId}`
+  getCourseDetails: async (courseId: string): Promise<CourseData> => {
+    const response = await studentApi.get<CourseData>(
+      `/learning/course/${courseId}/details`
     );
     return response;
   },

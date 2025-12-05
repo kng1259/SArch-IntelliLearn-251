@@ -23,12 +23,12 @@ import {
 } from "@/components/ui/accordion";
 import Image from "next/image";
 import Loader from "@/app/components/Loader";
-import courseService, { Course } from "@/lib/services/courseService";
-import { useEffect, useState } from "react";
-import { mockCourses } from "@/data/mockData";
+import courseService, { CourseData } from "@/lib/services/courseService";
+import { useEffect, useRef, useState } from "react";
 import { Feedback } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import assessmentService from "@/lib/services/assessmentService";
 
 const CourseDetail = ({
   id,
@@ -37,10 +37,14 @@ const CourseDetail = ({
   id: string;
   isEnrolled: boolean;
 }) => {
-  const [course, setCourse] = useState<Course | null>(null);
-  const mockCourse = mockCourses.find((c) => c.id === "1");
+  const [courseData, setCourseData] = useState<CourseData | null>(null);
   const [enrolled, setEnrolled] = useState(isEnrolled);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+
+  const [files, setFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const ALLOWED_FILE_TYPES = ".pdf, .doc, .docx, .zip";
+  const MAX_FILES = 1;
 
   const router = useRouter();
 
@@ -48,7 +52,9 @@ const CourseDetail = ({
     const getCourseDetails = async () => {
       try {
         const res = await courseService.getCourseDetails(id);
-        setCourse(res);
+        setCourseData(res);
+        console.log("Course details:", res);
+
         const courseFeedbacks = await courseService.getCourseFeedbacks(id);
         setFeedbacks(courseFeedbacks);
       } catch (error) {
@@ -68,36 +74,78 @@ const CourseDetail = ({
     }
   };
 
-  const handleStartQuiz = (quizId: string) => {
-    console.log(`Starting quiz with ID: ${quizId}`);
+  const handleStartQuiz = async (quizId: string) => {
+    router.push(
+      `/student/my-courses/${courseData?.course.id}/quizzes/${quizId}`
+    );
   };
 
-  const handleViewAssignment = (assignmentId: string) => {
-    console.log(`Viewing assignment with ID: ${assignmentId}`);
+  const handleStartExam = async (examId: string) => {
+    router.push(`/student/my-courses/${courseData?.course.id}/exams/${examId}`);
   };
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "video":
-        return <PlayCircle className="w-4 h-4" />;
-      case "document":
-        return <FileText className="w-4 h-4" />;
-      case "slides":
-        return <BookOpen className="w-4 h-4" />;
-      default:
-        return <FileText className="w-4 h-4" />;
+  const handleSubmitAssignment = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+      fileInputRef.current.click();
     }
   };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+
+    if (!files) return;
+
+    if (files.length > MAX_FILES) {
+      alert(`Bạn chỉ được phép chọn tối đa ${MAX_FILES} file.`);
+      event.target.value = "";
+      return;
+    }
+
+    const allowedFileTypes = ALLOWED_FILE_TYPES.split(", ");
+    const allowedFileTypesRegex = new RegExp(
+      `(${allowedFileTypes.join("|")})$`
+    );
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileName = file.name.toLowerCase();
+
+      if (!allowedFileTypesRegex.test(fileName)) {
+        alert(`File ${file.name} không đúng điều kiện.`);
+        event.target.value = "";
+        return;
+      }
+    }
+
+    setFiles(Array.from(files));
+
+    console.log(`Đã chọn ${files.length} file.`);
+  };
+
+  const handleUploadAssignment = async (assignmentId: string) => {
+    try {
+      const res = await assessmentService.submitAssignment({
+        fileName: files[0].name,
+        content: files[0].type,
+        assignmentId: assignmentId,
+      });
+      console.log(res);
+    } catch (error) {
+      console.error("Error uploading assignment:", error);
+    }
+  };
+
   return (
     <>
-      {course ? (
+      {courseData ? (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             <div className="lg:col-span-2">
               <div className="aspect-video relative overflow-hidden rounded-lg mb-6">
                 <Image
                   src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800"
-                  alt={course.name}
+                  alt={courseData.course.name}
                   className="w-full h-full object-cover"
                   width={1920}
                   height={100}
@@ -114,8 +162,10 @@ const CourseDetail = ({
                   </Badge>
                 )}
               </div>
-              <h2 className="text-black mb-4">{course.name}</h2>
-              <p className="text-gray-600 mb-6">{course.description}</p>
+              <h2 className="text-black mb-4">{courseData.course.name}</h2>
+              <p className="text-gray-600 mb-6">
+                {courseData.course.description}
+              </p>
 
               {/* <div className="flex items-center gap-6 text-sm text-gray-600 mb-6">
               <div className="flex items-center gap-2">
@@ -134,7 +184,9 @@ const CourseDetail = ({
 
               <p className="text-sm text-gray-600">
                 Instructor:{" "}
-                <span className="text-gray-900">{course.tutorId}</span>
+                <span className="text-gray-900">
+                  {courseData.course.tutorId}
+                </span>
               </p>
             </div>
 
@@ -164,7 +216,7 @@ const CourseDetail = ({
                           className="w-full text-black"
                           onClick={() =>
                             router.push(
-                              `/student/my-courses/${course.id}/content`
+                              `/student/my-courses/${courseData.course.id}/content`
                             )
                           }
                         >
@@ -175,7 +227,7 @@ const CourseDetail = ({
                           variant="outline"
                           onClick={() =>
                             router.push(
-                              `/student/my-courses/${course.id}/grades`
+                              `/student/my-courses/${courseData.course.id}/grades`
                             )
                           }
                         >
@@ -212,69 +264,55 @@ const CourseDetail = ({
 
               <TabsContent value="content" className="space-y-4">
                 <Accordion type="single" collapsible className="space-y-4">
-                  {mockCourse?.modules?.map((module, index) => (
-                    <AccordionItem
-                      key={module.id}
-                      value={module.id}
-                      className="bg-white rounded-lg border px-6"
-                    >
-                      <AccordionTrigger>
-                        <div className="flex items-center gap-3">
-                          <span className="text-gray-500">
-                            Module {index + 1}
-                          </span>
-                          <span className="text-black">{module.title}</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-6 pt-4">
-                          {/* Materials */}
-                          {module.materials.length > 0 && (
+                  <AccordionItem
+                    value={courseData.course.id}
+                    className="bg-white rounded-lg border px-6"
+                  >
+                    <AccordionTrigger>
+                      <div className="flex items-center gap-3">
+                        <span className="text-gray-500">Course details</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-6 pt-4">
+                        {/* Materials */}
+                        {courseData.materials &&
+                          courseData.materials.length > 0 && (
                             <div>
                               <h4 className="text-black mb-3">
                                 Learning Materials
                               </h4>
                               <div className="space-y-2">
-                                {module.materials.map((material) => (
+                                {courseData.materials.map((material) => (
                                   <div
                                     key={material.id}
                                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 cursor-pointer"
                                   >
                                     <div className="flex items-center gap-3">
-                                      <div className="text-indigo-600">
-                                        {getIcon(material.type)}
-                                      </div>
                                       <div>
                                         <p className="text-black text-sm">
-                                          {material.title}
+                                          {material.name}
                                         </p>
-                                        {material.duration && (
-                                          <p className="text-xs text-gray-500">
-                                            {material.duration}
-                                          </p>
-                                        )}
                                       </div>
                                     </div>
-                                    {material.completed && (
-                                      <CheckCircle className="w-5 h-5 text-green-500" />
-                                    )}
                                   </div>
                                 ))}
                               </div>
                             </div>
                           )}
 
-                          {/* Quizzes */}
-                          {module.quizzes.length > 0 && (
+                        {/* Quizzes */}
+                        {courseData.quizzes &&
+                          courseData.quizzes.length > 0 && (
                             <div>
                               <h4 className="text-black mb-3">Quizzes</h4>
                               <div className="space-y-2">
-                                {module.quizzes.map((quiz) => (
+                                {courseData.quizzes.map((quiz) => (
                                   <Card key={quiz.id}>
                                     <CardHeader>
                                       <CardTitle className="flex items-center gap-2">
                                         <ClipboardList className="w-5 h-5" />
-                                        {quiz.title}
+                                        {quiz.name}
                                       </CardTitle>
                                       <CardDescription>
                                         {quiz.description}
@@ -286,15 +324,24 @@ const CourseDetail = ({
                                           <p>
                                             Time Limit: {quiz.duration} minutes
                                           </p>
-                                          <p>
-                                            Passing Score: {quiz.passingScore}%
-                                          </p>
-                                          <p>
-                                            Attempts: {quiz.attempts}/
-                                            {quiz.attempts}
-                                          </p>
+                                          <div className="flex gap-5">
+                                            <p>
+                                              Start Date:{" "}
+                                              {new Date(
+                                                quiz.startAt
+                                              ).toLocaleDateString()}
+                                            </p>
+                                            <p>
+                                              Due Date:{" "}
+                                              {new Date(
+                                                quiz.endAt
+                                              ).toLocaleDateString()}
+                                            </p>
+                                          </div>
+                                          <p>Difficulity: {quiz.level}</p>
                                         </div>
                                         <Button
+                                          variant="outline"
                                           onClick={() =>
                                             handleStartQuiz(quiz.id)
                                           }
@@ -309,17 +356,18 @@ const CourseDetail = ({
                             </div>
                           )}
 
-                          {/* Assignments */}
-                          {module.assignments.length > 0 && (
+                        {/* Assignments */}
+                        {courseData.assignments &&
+                          courseData.assignments.length > 0 && (
                             <div>
                               <h4 className="text-black mb-3">Assignments</h4>
                               <div className="space-y-2">
-                                {module.assignments.map((assignment) => (
+                                {courseData.assignments.map((assignment) => (
                                   <Card key={assignment.id}>
                                     <CardHeader>
                                       <CardTitle className="flex items-center gap-2">
                                         <FileText className="w-5 h-5" />
-                                        {assignment.title}
+                                        {assignment.name}
                                       </CardTitle>
                                       <CardDescription>
                                         {assignment.description}
@@ -328,33 +376,73 @@ const CourseDetail = ({
                                     <CardContent>
                                       <div className="flex items-center justify-between">
                                         <div className="text-sm text-gray-600 space-y-1">
-                                          <p>
-                                            Due Date:{" "}
-                                            {new Date(
-                                              assignment.dueDate
-                                            ).toLocaleDateString()}
-                                          </p>
-                                          <p>Max Score: {assignment.grade}</p>
-                                          {assignment.status == "submitted" && (
-                                            <Badge className="bg-green-500">
-                                              Submitted
-                                            </Badge>
+                                          <div className="flex gap-5">
+                                            <p>
+                                              Start Date:{" "}
+                                              {new Date(
+                                                assignment.startAt
+                                              ).toLocaleDateString()}
+                                            </p>
+                                            <p>
+                                              Due Date:{" "}
+                                              {new Date(
+                                                assignment.endAt
+                                              ).toLocaleDateString()}
+                                            </p>
+                                          </div>
+                                          <div className="flex gap-5">
+                                            <p>
+                                              Instruction:{" "}
+                                              <a
+                                                className="underline text-blue-500"
+                                                href={assignment.instruction}
+                                                target="_blank"
+                                              >
+                                                Click here
+                                              </a>
+                                            </p>
+                                            <p>
+                                              Grading guidelines:{" "}
+                                              <a
+                                                className="underline text-blue-500"
+                                                href={
+                                                  assignment.gradingGuidelines
+                                                }
+                                                target="_blank"
+                                              >
+                                                Click here
+                                              </a>
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            className="hidden"
+                                            accept={ALLOWED_FILE_TYPES}
+                                            onChange={handleFileChange}
+                                          />
+                                          {files.length > 0 ? (
+                                            <Button
+                                              variant="outline"
+                                              onClick={() => {
+                                                handleUploadAssignment(
+                                                  assignment.id
+                                                );
+                                              }}
+                                            >
+                                              Upload
+                                            </Button>
+                                          ) : (
+                                            <Button
+                                              variant={"outline"}
+                                              onClick={handleSubmitAssignment}
+                                            >
+                                              Submit
+                                            </Button>
                                           )}
                                         </div>
-                                        <Button
-                                          variant={
-                                            assignment.status === "submitted"
-                                              ? "outline"
-                                              : "default"
-                                          }
-                                          onClick={() =>
-                                            handleViewAssignment(assignment.id)
-                                          }
-                                        >
-                                          {assignment.status === "submitted"
-                                            ? "View Submission"
-                                            : "Submit Assignment"}
-                                        </Button>
                                       </div>
                                     </CardContent>
                                   </Card>
@@ -363,53 +451,49 @@ const CourseDetail = ({
                             </div>
                           )}
 
-                          {/* Exams */}
-                          {module.exams.length > 0 && (
-                            <div>
-                              <h4 className="text-black mb-3">Exams</h4>
-                              <div className="space-y-2">
-                                {module.exams.map((exam) => (
-                                  <Card key={exam.id}>
-                                    <CardHeader>
-                                      <CardTitle className="flex items-center gap-2">
-                                        <FileText className="w-5 h-5" />
-                                        {exam.title}
-                                      </CardTitle>
-                                      <CardDescription>
-                                        {exam.description}
-                                      </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="flex items-center justify-between">
-                                        <div className="text-sm text-gray-600 space-y-1">
-                                          <p>
-                                            Date:{" "}
-                                            {new Date(
-                                              exam.date
-                                            ).toLocaleDateString()}
-                                          </p>
-                                          <p>
-                                            Duration: {exam.duration} minutes
-                                          </p>
-                                        </div>
-                                        <Button
-                                          onClick={() =>
-                                            console.log("Starting exam")
-                                          }
-                                        >
-                                          Start Exam
-                                        </Button>
+                        {/* Exams */}
+                        {courseData.exams && courseData.exams.length > 0 && (
+                          <div>
+                            <h4 className="text-black mb-3">Exams</h4>
+                            <div className="space-y-2">
+                              {courseData.exams.map((exam) => (
+                                <Card key={exam.id}>
+                                  <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                      <FileText className="w-5 h-5" />
+                                      {exam.name}
+                                    </CardTitle>
+                                    <CardDescription>
+                                      {exam.description}
+                                    </CardDescription>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="flex items-center justify-between">
+                                      <div className="text-sm text-gray-600 space-y-1">
+                                        <p>
+                                          Due Date:{" "}
+                                          {new Date(
+                                            exam.endAt
+                                          ).toLocaleDateString()}
+                                        </p>
+                                        <p>Duration: {exam.duration} minutes</p>
                                       </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
+                                      <Button
+                                        variant={"outline"}
+                                        onClick={() => handleStartExam(exam.id)}
+                                      >
+                                        Start Exam
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
                             </div>
-                          )}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
+                          </div>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </TabsContent>
 
@@ -451,68 +535,6 @@ const CourseDetail = ({
                           </div>
                         </div>
                       )}
-                      {/* {feedbacks?.quizFeedbacks &&
-                          feedbacks.quizFeedbacks.length > 0 && (
-                            <div>
-                              <h4 className="text-black mb-3">Quizzes</h4>
-                              <div className="space-y-2">
-                                {feedbacks.quizFeedbacks.map((fb) => (
-                                  <Card key={fb.id}>
-                                    <CardHeader>
-                                      <CardTitle className="flex items-center gap-2">
-                                        <ClipboardList className="w-5 h-5" />
-                                        {fb.quiz_titile}
-                                      </CardTitle>
-                                      <CardDescription>
-                                        {fb.description}
-                                      </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="flex items-center justify-between">
-                                        <div className="text-sm text-gray-600 space-y-1">
-                                          <p className="text-md text-black">
-                                            {fb.title}:
-                                          </p>
-                                          <p>{fb.message}</p>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
-                            </div>
-                          )} */}
-                      {/* {feedbacks?.assignmentFeedbacks &&
-                          feedbacks.assignmentFeedbacks.length > 0 && (
-                            <div>
-                              <h4 className="text-black mb-3">Assignments</h4>
-                              <div className="space-y-2">
-                                {feedbacks.assignmentFeedbacks.map((fb) => (
-                                  <Card key={fb.id}>
-                                    <CardHeader>
-                                      <CardTitle className="flex items-center gap-2">
-                                        <ClipboardList className="w-5 h-5" />
-                                        {fb.assignment_title}
-                                      </CardTitle>
-                                      <CardDescription>
-                                        {fb.description}
-                                      </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="flex items-center justify-between">
-                                        <div className="text-sm text-gray-600 space-y-1">
-                                          <p className="text-md text-black">
-                                            {fb.title}:
-                                          </p>
-                                          <p>{fb.message}</p>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
-                            </div>
-                          )} */}
                     </div>
                   </CardContent>
                 </Card>

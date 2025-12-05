@@ -1,6 +1,8 @@
 // Assessment Service - API calls for exam, quiz, assignment management (Teaching Service)
 
-import { api } from '../api';
+import { api } from "../api";
+import studentApi from "../studentApi";
+import { StudentTest } from "./courseService";
 
 // ============ Common Types ============
 export interface Option {
@@ -13,6 +15,30 @@ export interface Question {
   id?: string;
   content: string;
   options: Option[];
+}
+
+export interface AssignmentSubmit {
+  fileName: string;
+  content: string;
+  assignmentId: string;
+}
+
+export interface questionAnswer {
+  questionId: string;
+  choices: {
+    order: number;
+    optionOrder: number;
+  }[];
+}
+
+export interface testSubmit {
+  attemptId: string;
+  answers: questionAnswer[];
+}
+
+export interface testAttemptResponse {
+  success: boolean;
+  message: string;
 }
 
 // ============ Exam Types ============
@@ -79,7 +105,7 @@ export interface QuizUpdateRequest {
 }
 
 export interface QuestionUpdateRequest {
-  id?: string;  // UUID - if provided, updates existing question; if not, creates new
+  id?: string; // UUID - if provided, updates existing question; if not, creates new
   content: string;
   options: Option[];
 }
@@ -118,11 +144,11 @@ export interface AssignmentResponse {
 
 const assessmentService = {
   // ============ Exam APIs ============
-  
+
   // Create new exam
   // POST /exam
   createExam: async (examData: ExamRequest): Promise<void> => {
-    await api.post<void>('/exam', examData);
+    await api.post<void>("/exam", examData);
   },
 
   // Get exam by ID
@@ -133,7 +159,10 @@ const assessmentService = {
 
   // Update exam
   // PUT /exam/{examId}
-  updateExam: async (examId: string, examData: ExamUpdateRequest): Promise<void> => {
+  updateExam: async (
+    examId: string,
+    examData: ExamUpdateRequest
+  ): Promise<void> => {
     await api.put<void>(`/exam/${examId}`, examData);
   },
 
@@ -150,11 +179,11 @@ const assessmentService = {
   },
 
   // ============ Quiz APIs ============
-  
+
   // Create new quiz
   // POST /quiz
   createQuiz: async (quizData: QuizRequest): Promise<void> => {
-    await api.post<void>('/quiz', quizData);
+    await api.post<void>("/quiz", quizData);
   },
 
   // Get quiz by ID
@@ -165,13 +194,19 @@ const assessmentService = {
 
   // Update quiz
   // PUT /quiz/{quizId}
-  updateQuiz: async (quizId: string, quizData: QuizUpdateRequest): Promise<void> => {
+  updateQuiz: async (
+    quizId: string,
+    quizData: QuizUpdateRequest
+  ): Promise<void> => {
     await api.put<void>(`/quiz/${quizId}`, quizData);
   },
 
   // Update quiz with questions
   // PUT /quiz/{quizId}
-  updateQuizWithQuestions: async (quizId: string, quizData: QuizUpdateWithQuestionsRequest): Promise<void> => {
+  updateQuizWithQuestions: async (
+    quizId: string,
+    quizData: QuizUpdateWithQuestionsRequest
+  ): Promise<void> => {
     await api.put<void>(`/quiz/${quizId}`, quizData);
   },
 
@@ -188,29 +223,31 @@ const assessmentService = {
   },
 
   // ============ Assignment APIs ============
-  
+
   // Create new assignment (multipart/form-data)
   // POST /assignment
-  createAssignment: async (assignmentData: AssignmentRequest): Promise<void> => {
+  createAssignment: async (
+    assignmentData: AssignmentRequest
+  ): Promise<void> => {
     const formData = new FormData();
-    formData.append('name', assignmentData.name);
-    formData.append('description', assignmentData.description);
-    formData.append('courseId', assignmentData.courseId);
-    
+    formData.append("name", assignmentData.name);
+    formData.append("description", assignmentData.description);
+    formData.append("courseId", assignmentData.courseId);
+
     if (assignmentData.startAt) {
-      formData.append('startAt', assignmentData.startAt);
+      formData.append("startAt", assignmentData.startAt);
     }
     if (assignmentData.endAt) {
-      formData.append('endAt', assignmentData.endAt);
+      formData.append("endAt", assignmentData.endAt);
     }
     if (assignmentData.instruction) {
-      formData.append('instruction', assignmentData.instruction);
+      formData.append("instruction", assignmentData.instruction);
     }
     if (assignmentData.gradingGuidelines) {
-      formData.append('gradingGuidelines', assignmentData.gradingGuidelines);
+      formData.append("gradingGuidelines", assignmentData.gradingGuidelines);
     }
 
-    await api.postFormData<void>('/assignment', formData);
+    await api.postFormData<void>("/assignment", formData);
   },
 
   // Get assignment by ID
@@ -221,16 +258,24 @@ const assessmentService = {
 
   // Update assignment (multipart/form-data)
   // PUT /assignment/{assignmentId}
-  updateAssignment: async (assignmentId: string, assignmentData: Partial<AssignmentRequest>): Promise<void> => {
+  updateAssignment: async (
+    assignmentId: string,
+    assignmentData: Partial<AssignmentRequest>
+  ): Promise<void> => {
     const formData = new FormData();
-    
-    if (assignmentData.name) formData.append('name', assignmentData.name);
-    if (assignmentData.description) formData.append('description', assignmentData.description);
-    if (assignmentData.courseId) formData.append('courseId', assignmentData.courseId);
-    if (assignmentData.startAt) formData.append('startAt', assignmentData.startAt);
-    if (assignmentData.endAt) formData.append('endAt', assignmentData.endAt);
-    if (assignmentData.instruction) formData.append('instruction', assignmentData.instruction);
-    if (assignmentData.gradingGuidelines) formData.append('gradingGuidelines', assignmentData.gradingGuidelines);
+
+    if (assignmentData.name) formData.append("name", assignmentData.name);
+    if (assignmentData.description)
+      formData.append("description", assignmentData.description);
+    if (assignmentData.courseId)
+      formData.append("courseId", assignmentData.courseId);
+    if (assignmentData.startAt)
+      formData.append("startAt", assignmentData.startAt);
+    if (assignmentData.endAt) formData.append("endAt", assignmentData.endAt);
+    if (assignmentData.instruction)
+      formData.append("instruction", assignmentData.instruction);
+    if (assignmentData.gradingGuidelines)
+      formData.append("gradingGuidelines", assignmentData.gradingGuidelines);
 
     await api.putFormData<void>(`/assignment/${assignmentId}`, formData);
   },
@@ -243,8 +288,43 @@ const assessmentService = {
 
   // Get assignments by course ID
   // GET /assignment/course/{courseId}
-  getAssignmentsByCourse: async (courseId: string): Promise<AssignmentResponse[]> => {
+  getAssignmentsByCourse: async (
+    courseId: string
+  ): Promise<AssignmentResponse[]> => {
     return api.get<AssignmentResponse[]>(`/assignment/course/${courseId}`);
+  },
+
+  attempQuiz: async (quizId: string): Promise<StudentTest> => {
+    const response = await studentApi.get<StudentTest>(
+      `/learning/assessment/quizzes/${quizId}`
+    );
+    return response;
+  },
+
+  attempExam: async (ExamId: string): Promise<StudentTest> => {
+    const response = await studentApi.get<StudentTest>(
+      `/learning/assessment/exams/${ExamId}`
+    );
+    return response;
+  },
+
+  submitTestAttempt: async (
+    testSubmit: testSubmit
+  ): Promise<testAttemptResponse> => {
+    const response = await studentApi.post<testAttemptResponse>(
+      `/learning/assessment/tests/attempts`,
+      { ...testSubmit }
+    );
+
+    return response;
+  },
+
+  submitAssignment: async (assignmentSubmit: AssignmentSubmit ): Promise<any> => {
+    const response = await studentApi.post<any>(
+      `/learning/assessment/assignments/${assignmentSubmit.assignmentId}/submission`,
+      { ...assignmentSubmit }
+    );
+    return response;
   },
 };
 
