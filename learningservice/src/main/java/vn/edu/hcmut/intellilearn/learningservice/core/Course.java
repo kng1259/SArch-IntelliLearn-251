@@ -40,12 +40,15 @@ public class Course {
     @Column(name = "tutor_id", nullable = false)
     private UUID tutorId;
 
+    @Builder.Default
     @OneToMany(mappedBy = "course", orphanRemoval = true)
     private Set<Feedback> feedbacks = new LinkedHashSet<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "course", orphanRemoval = true)
     private Set<Enrollment> enrollments = new LinkedHashSet<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "course", orphanRemoval = true)
     private Set<Material> materials = new LinkedHashSet<>();
 

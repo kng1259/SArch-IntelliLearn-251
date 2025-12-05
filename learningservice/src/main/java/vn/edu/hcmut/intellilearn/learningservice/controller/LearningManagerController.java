@@ -4,6 +4,7 @@ import vn.edu.hcmut.intellilearn.learningservice.controller.datatype.ApiResponse
 import vn.edu.hcmut.intellilearn.learningservice.core.KeycloakPrincipal;
 import vn.edu.hcmut.intellilearn.learningservice.domain.LearningManagerService;
 import vn.edu.hcmut.intellilearn.learningservice.domain.datatype.CourseResponse;
+import vn.edu.hcmut.intellilearn.learningservice.domain.datatype.CourseDetailsResponse;
 import vn.edu.hcmut.intellilearn.learningservice.domain.datatype.FeedbackResponse;
 import vn.edu.hcmut.intellilearn.learningservice.domain.datatype.LearningMaterialResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,6 +37,21 @@ public class LearningManagerController {
                 .data(course)
                 .success(true)
                 .message("Lấy thông tin khóa học thành công")
+                .build();
+    }
+
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/course/{courseId}/details")
+    public ApiResponse<CourseDetailsResponse> getCourseDetails(
+            @AuthenticationPrincipal KeycloakPrincipal principal,
+            @PathVariable UUID courseId) {
+
+        var courseDetails = learningManagerService.getCourseDetails(principal.userId(), courseId);
+
+        return ApiResponse.<CourseDetailsResponse>builder()
+                .data(courseDetails)
+                .success(true)
+                .message("Lấy thông tin chi tiết khóa học thành công")
                 .build();
     }
 

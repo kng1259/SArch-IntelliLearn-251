@@ -198,9 +198,9 @@ public class AssessmentTrackerServiceImpl implements AssessmentTrackerService {
         r.setDescription(a.getDescription());
         r.setInstruction(a.getInstruction());
         r.setGradingGuidelines(a.getGradingGuidelines());
-        r.setStartAt(toMillis(a.getStartAt()));
-        r.setEndAt(toMillis(a.getEndAt()));
-        r.setCreatedAt(toMillis(a.getCreatedAt()));
+        r.setStartAt(a.getStartAt());
+        r.setEndAt(a.getEndAt());
+        r.setCreatedAt(a.getCreatedAt());
         return r;
     }
 
@@ -211,9 +211,9 @@ public class AssessmentTrackerServiceImpl implements AssessmentTrackerService {
         res.setId(quiz.getId());
         res.setName(test.getName());
         res.setDescription(test.getDescription());
-        res.setStartAt(toMillis(test.getStartAt()));
-        res.setEndAt(toMillis(test.getEndAt()));
-        res.setCreatedAt(toMillis(test.getCreatedAt()));
+        res.setStartAt(test.getStartAt());
+        res.setEndAt(test.getEndAt());
+        res.setCreatedAt(test.getCreatedAt());
         res.setDuration(test.getDuration());
         res.setLevel(quiz.getLevel().getCodename());
         res.setAttemptId(attemptId);
@@ -233,9 +233,9 @@ public class AssessmentTrackerServiceImpl implements AssessmentTrackerService {
         res.setId(exam.getId());
         res.setName(test.getName());
         res.setDescription(test.getDescription());
-        res.setStartAt(toMillis(test.getStartAt()));
-        res.setEndAt(toMillis(test.getEndAt()));
-        res.setCreatedAt(toMillis(test.getCreatedAt()));
+        res.setStartAt(test.getStartAt());
+        res.setEndAt(test.getEndAt());
+        res.setCreatedAt(test.getCreatedAt());
         res.setDuration(test.getDuration());
         res.setAttemptId(attemptId);
 
@@ -264,11 +264,5 @@ public class AssessmentTrackerServiceImpl implements AssessmentTrackerService {
 
         r.setOptions(ops);
         return r;
-    }
-
-    private long toMillis(LocalDateTime time) {
-        return time == null ? 0 : time
-                .atZone(ZoneId.systemDefault())
-                .toInstant().toEpochMilli();
     }
 }

@@ -11,4 +11,6 @@ public interface AssignmentTrackerRepository extends JpaRepository<Assignment, U
         return findById(assignmentId)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found"));
     }
+
+    java.util.List<Assignment> findByCourseId(UUID courseId);
 }

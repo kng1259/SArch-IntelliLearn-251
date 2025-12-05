@@ -16,4 +16,5 @@ public interface LearningManagerService {
     File getLearningMaterialContent(UUID studentId, UUID materialId);
     List<FeedbackResponse> getCourseFeedbacks(UUID studentId, UUID courseId);
     List<CourseResponse> getStudentCourses(UUID studentId);
+    vn.edu.hcmut.intellilearn.learningservice.domain.datatype.CourseDetailsResponse getCourseDetails(UUID studentId, UUID courseId);
 }

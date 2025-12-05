@@ -13,4 +13,6 @@ public interface ExamTrackerRepository extends JpaRepository<Exam, UUID> {
         return findById(examId)
                 .orElseThrow(() -> new EntityNotFoundException("Exam not found"));
     }
+
+    java.util.List<Exam> findByCourseId(UUID courseId);
 }

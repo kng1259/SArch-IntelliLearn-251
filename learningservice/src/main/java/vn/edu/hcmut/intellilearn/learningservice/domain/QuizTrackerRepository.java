@@ -13,4 +13,6 @@ public interface QuizTrackerRepository extends JpaRepository<Quiz, UUID> {
         return findById(quizId)
                 .orElseThrow(() -> new EntityNotFoundException("Quiz not found"));
     }
+
+    java.util.List<Quiz> findByCourseId(UUID courseId);
 }

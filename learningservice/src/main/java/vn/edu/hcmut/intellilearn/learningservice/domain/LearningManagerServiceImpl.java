@@ -24,6 +24,9 @@ public class LearningManagerServiceImpl implements LearningManagerService{
     private final EnrollmentRepository enrollmentRepository;
     private final MaterialRepository materialRepository;
     private final FeedbackRepository feedbackRepository;
+    private final AssignmentTrackerRepository assignmentTrackerRepository;
+    private final QuizTrackerRepository quizTrackerRepository;
+    private final ExamTrackerRepository examTrackerRepository;
 
     @Override
     public CourseResponse getCourse(UUID studentId, UUID courseId) {
@@ -120,6 +123,68 @@ public class LearningManagerServiceImpl implements LearningManagerService{
                 .endAt(course.getEndAt())
                 .createdAt(course.getCreatedAt())
                 .tutorId(course.getTutorId())
+                .build();
+    }
+
+    @Override
+    public vn.edu.hcmut.intellilearn.learningservice.domain.datatype.CourseDetailsResponse getCourseDetails(UUID studentId, UUID courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        List<LearningMaterialResponse> materials = materialRepository.findByCourse_CourseId(courseId).stream()
+                .map(m -> LearningMaterialResponse.builder()
+                        .id(m.getId())
+                        .name(m.getName())
+                        .content(m.getContent())
+                        .createdAt(m.getCreatedAt())
+                        .updatedAt(m.getUpdatedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        List<vn.edu.hcmut.intellilearn.learningservice.domain.datatype.AssignmentResponse> assignments = assignmentTrackerRepository.findByCourseId(courseId).stream()
+                .map(a -> vn.edu.hcmut.intellilearn.learningservice.domain.datatype.AssignmentResponse.builder()
+                        .id(a.getId())
+                        .name(a.getName())
+                        .description(a.getDescription())
+                        .instruction(a.getInstruction())
+                        .gradingGuidelines(a.getGradingGuidelines())
+                        .startAt(a.getStartAt())
+                        .endAt(a.getEndAt())
+                        .createdAt(a.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        List<vn.edu.hcmut.intellilearn.learningservice.domain.datatype.QuizResponse> quizzes = quizTrackerRepository.findByCourseId(courseId).stream()
+                .map(q -> vn.edu.hcmut.intellilearn.learningservice.domain.datatype.QuizResponse.builder()
+                        .id(q.getId())
+                        .name(q.getTest().getName())
+                        .description(q.getTest().getDescription())
+                        .startAt(q.getTest().getStartAt())
+                        .endAt(q.getTest().getEndAt())
+                        .createdAt(q.getTest().getCreatedAt())
+                        .duration(q.getTest().getDuration())
+                        .level(q.getLevel().getCodename())
+                        .build())
+                .collect(Collectors.toList());
+
+        List<vn.edu.hcmut.intellilearn.learningservice.domain.datatype.ExamResponse> exams = examTrackerRepository.findByCourseId(courseId).stream()
+                .map(e -> vn.edu.hcmut.intellilearn.learningservice.domain.datatype.ExamResponse.builder()
+                        .id(e.getId())
+                        .name(e.getTest().getName())
+                        .description(e.getTest().getDescription())
+                        .startAt(e.getTest().getStartAt())
+                        .endAt(e.getTest().getEndAt())
+                        .createdAt(e.getTest().getCreatedAt())
+                        .duration(e.getTest().getDuration())
+                        .build())
+                .collect(Collectors.toList());
+
+        return vn.edu.hcmut.intellilearn.learningservice.domain.datatype.CourseDetailsResponse.builder()
+                .course(mapToCourseResponse(course))
+                .materials(materials)
+                .assignments(assignments)
+                .quizzes(quizzes)
+                .exams(exams)
                 .build();
     }
 }
