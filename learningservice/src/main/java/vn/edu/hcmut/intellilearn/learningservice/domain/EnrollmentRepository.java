@@ -5,9 +5,12 @@ import vn.edu.hcmut.intellilearn.learningservice.core.EnrollmentId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, EnrollmentId> {
     boolean existsById_StudentIdAndId_CourseId(UUID studentId, UUID courseId);
+
+    List<Enrollment> findById_StudentId(UUID studentId);
 }

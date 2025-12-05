@@ -103,6 +103,13 @@ public class LearningManagerServiceImpl implements LearningManagerService{
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<CourseResponse> getStudentCourses(UUID studentId) {
+        return enrollmentRepository.findById_StudentId(studentId).stream()
+                .map(enrollment -> mapToCourseResponse(enrollment.getCourse()))
+                .collect(Collectors.toList());
+    }
+
     // --- Helper Method ---
     private CourseResponse mapToCourseResponse(Course course) {
         return CourseResponse.builder()

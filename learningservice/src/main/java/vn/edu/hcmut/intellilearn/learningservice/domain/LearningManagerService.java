@@ -15,4 +15,5 @@ public interface LearningManagerService {
     LearningMaterialResponse getLearningMaterial(UUID studentId, UUID materialId);
     File getLearningMaterialContent(UUID studentId, UUID materialId);
     List<FeedbackResponse> getCourseFeedbacks(UUID studentId, UUID courseId);
+    List<CourseResponse> getStudentCourses(UUID studentId);
 }

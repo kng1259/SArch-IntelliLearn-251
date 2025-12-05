@@ -156,3 +156,16 @@ INSERT INTO feedback (feedback_id, content, created_at, tutor_id, student_id, co
 ON CONFLICT (feedback_id) DO NOTHING;
 
 COMMIT;
+
+-- -------------------------
+-- Course 3: Microservices Architecture
+-- -------------------------
+
+INSERT INTO course (course_id, name, description, created_at, start_at, end_at, tutor_id) VALUES
+  ('11111111-2222-3333-4444-555555555555', 'Microservices Architecture', 'Design and build scalable microservices.', NOW(), NOW() + INTERVAL '2 days', NOW() + INTERVAL '60 days', '6aa5ed35-91b9-4cd6-80d3-9f4dff25846d')
+ON CONFLICT (course_id) DO NOTHING;
+
+-- Enrollment for Course 3
+INSERT INTO enrollment (student_id, course_id, "timestamp") VALUES
+  ('49616e7e-ad5d-4312-83ad-294facc849b2', '11111111-2222-3333-4444-555555555555', NOW())
+ON CONFLICT (student_id, course_id) DO NOTHING;

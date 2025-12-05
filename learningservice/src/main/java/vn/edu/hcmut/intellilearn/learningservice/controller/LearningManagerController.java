@@ -68,6 +68,20 @@ public class LearningManagerController {
     }
 
     @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/my-courses")
+    public ApiResponse<List<CourseResponse>> getStudentCourses(
+            @AuthenticationPrincipal KeycloakPrincipal principal) {
+
+        var courses = learningManagerService.getStudentCourses(principal.userId());
+
+        return ApiResponse.<List<CourseResponse>>builder()
+                .data(courses)
+                .success(true)
+                .message("Lấy danh sách khóa học của tôi thành công")
+                .build();
+    }
+
+    @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/material/{materialId}")
     public ApiResponse<LearningMaterialResponse> getLearningMaterial(
             @AuthenticationPrincipal KeycloakPrincipal principal,
