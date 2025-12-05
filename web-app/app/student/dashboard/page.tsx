@@ -19,24 +19,19 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { mockCourses } from "@/data/mockData";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import authService, { UserInfo } from "@/lib/services/authService";
 import courseService, { Course } from "@/lib/services/courseService";
 
 export default function StudentDashboard() {
   const router = useRouter();
-  const enrolledCourses = mockCourses.filter((c) => c.isEnrolled);
-  const [recommendedCourses, setRecommendedCourses] = useState<Course[] | null>(
-    null
-  );
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[] | null>(null);
+  const [recommendedCourses, setRecommendedCourses] = useState<
+    (Course & { isEnrolled?: boolean })[] | null
+  >(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-
-  const avgProgress =
-    enrolledCourses.reduce((sum, c) => sum + (c.progress || 0), 0) /
-      enrolledCourses.length || 0;
 
   const getRecommendedCourses = async () => {
     try {
@@ -48,6 +43,16 @@ export default function StudentDashboard() {
     }
   };
 
+  const getEnrolledCourse = async () => {
+    try {
+      const res = await courseService.getEnrolledCourses();
+      console.log("Enrolled courses:", res);
+      setEnrolledCourses(res);
+    } catch (error) {
+      console.error("Error fetching enrolled courses:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -55,12 +60,23 @@ export default function StudentDashboard() {
         console.log("User info:", res);
         setUserInfo(res);
         getRecommendedCourses();
+        getEnrolledCourse();
       } catch (error) {
         console.error("Error fetching user info:", error);
       }
     };
     fetchUserInfo();
   }, []);
+
+  const checkIfRecommendedIsEnrolled = useMemo(() => {
+    if (!recommendedCourses) return null;
+    return recommendedCourses.map((course) => ({
+      ...course,
+      isEnrolled: enrolledCourses?.some(
+        (enrolledCourse) => enrolledCourse.id === course.id
+      ),
+    }));
+  }, [recommendedCourses, enrolledCourses]);
 
   const onSignOut = async () => {
     await authService.logout().then(() => router.push("/signin"));
@@ -95,7 +111,7 @@ export default function StudentDashboard() {
                 Profile
               </Button>
               <Button
-                className="hover:cursor-pointer border-red-600"
+                className="hover:cursor-pointer"
                 variant="outline"
                 onClick={onSignOut}
               >
@@ -125,14 +141,14 @@ export default function StudentDashboard() {
             <CardContent>
               <div className="flex items-baseline gap-2">
                 <span className="text-indigo-600">
-                  {enrolledCourses.length}
+                  {enrolledCourses?.length}
                 </span>
                 <span className="text-sm text-gray-500">active</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-gray-600">
                 Average Progress
@@ -146,7 +162,7 @@ export default function StudentDashboard() {
                 <TrendingUp className="w-4 h-4 text-green-500" />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card>
             <CardHeader className="pb-3">
@@ -190,36 +206,44 @@ export default function StudentDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enrolledCourses.map((course) => (
-              <Card
-                key={course.id}
-                className="hover:shadow-lg hover:cursor-pointer hover:opacity-90 transition-shadow cursor-pointer"
-                onClick={() => {
-                  console.log(`Navigate to course ${course.id}`);
-                  router.push(`/student/my-courses/${course.id}`);
-                }}
-              >
-                <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                  <Image
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                    width={800}
-                    height={100}
-                  />
-                  <div className="absolute top-2 right-2">
-                    <Badge className="bg-indigo-600">Enrolled</Badge>
+            {enrolledCourses &&
+              enrolledCourses.map((course) => (
+                <Card
+                  key={course.id}
+                  className="hover:shadow-lg hover:cursor-pointer hover:opacity-90 transition-shadow cursor-pointer"
+                  onClick={() => {
+                    console.log(`Navigate to course ${course.id}`);
+                    router.push(`/student/my-courses/${course.id}`);
+                  }}
+                >
+                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                    <Image
+                      src={
+                        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800"
+                      }
+                      alt={course.name}
+                      className="w-full h-full object-cover"
+                      width={800}
+                      height={100}
+                      loading="eager"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-indigo-600 text-white">
+                        Enrolled
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-                <CardHeader>
-                  <CardTitle className="line-clamp-2 text-black">{course.title}</CardTitle>
-                  <CardDescription className="line-clamp-2 text-gray-400">
-                    {course.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
+                  <CardHeader>
+                    <CardTitle className="line-clamp-2 text-black">
+                      {course.name}
+                    </CardTitle>
+                    <CardDescription className="line-clamp-2 text-gray-400">
+                      {course.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* <div>
                       <div className="flex items-center justify-between text-sm mb-2">
                         <span className="text-gray-600">Progress</span>
                         <span className="text-indigo-600">
@@ -227,23 +251,23 @@ export default function StudentDashboard() {
                         </span>
                       </div>
                       <Progress value={course.progress} className="h-2" />
+                    </div> */}
+                      <div className="text-sm text-gray-500">
+                        Instructor: {course.tutorId}
+                      </div>
+                      <Button
+                        className="w-full bg-black text-white!"
+                        variant={"ghost"}
+                        onClick={() =>
+                          console.log(`Continue learning ${course.id}`)
+                        }
+                      >
+                        Continue Learning
+                      </Button>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      Instructor: {course.tutorName}
-                    </div>
-                    <Button
-                      className="w-full bg-black text-white!"
-                      variant={"ghost"}
-                      onClick={() =>
-                        console.log(`Continue learning ${course.id}`)
-                      }
-                    >
-                      Continue Learning
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         </section>
 
@@ -259,57 +283,65 @@ export default function StudentDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Suspense
-              fallback={<div className="text-xl text-black">Loading...</div>}
-            >
-              {recommendedCourses &&
-                recommendedCourses.map((course) => (
-                  <Card
-                    key={course.id}
-                    className="hover:shadow-lg transition-shadow"
-                  >
-                    <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                      <Image
-                        src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800"
-                        alt={course.name}
-                        className="w-full h-full object-cover"
-                        width={800}
-                        height={100}
-                      />
+            {checkIfRecommendedIsEnrolled &&
+              checkIfRecommendedIsEnrolled.map((course) => (
+                <Card
+                  key={course.id}
+                  className="hover:shadow-lg transition-shadow"
+                >
+                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                    <Image
+                      src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800"
+                      alt={course.name}
+                      className="w-full h-full object-cover"
+                      width={800}
+                      height={100}
+                      loading="eager"
+                    />
+                    {course.isEnrolled && (
+                      <div className="absolute top-2 right-2">
+                        <Badge className="bg-indigo-600 text-white">
+                          Enrolled
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="line-clamp-2 text-black">
+                        {course.name}
+                      </CardTitle>
                     </div>
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="line-clamp-2 text-black">
-                          {course.name}
-                        </CardTitle>
+                    <CardDescription className="line-clamp-2 text-gray-400">
+                      {course.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">
+                          {course.startAt.split("T")[0]} -{" "}
+                          {course.endAt?.split("T")[0]}
+                        </span>
                       </div>
-                      <CardDescription className="line-clamp-2 text-gray-400">
-                        {course.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-500">
-                            {course.startAt.split("T")[0]} -{" "}
-                            {course.endAt?.split("T")[0]}
-                          </span>
-                        </div>
-                        <Button
-                          className="w-full"
-                          variant="outline"
-                          onClick={() => {
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => {
+                          if (course.isEnrolled) {
+                            router.push(`/student/my-courses/${course.id}`);
+                          } else {
                             router.push(`/student/courses/${course.id}`);
-                            console.log(`View course ${course.id}`);
-                          }}
-                        >
-                          View Course
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-            </Suspense>
+                          }
+                          console.log(`View course ${course.id}`);
+                        }}
+                      >
+                        View Course
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         </section>
       </main>
