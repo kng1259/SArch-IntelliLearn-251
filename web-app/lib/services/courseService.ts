@@ -107,6 +107,13 @@ const courseService = {
     return api.post<FeedbackRequest>("/feedback", feedback);
   },
 
+  getEnrolledCourses: async (): Promise<Course[]> => {
+    const response = await studentApi.get<Course[]>(
+      "/learning/my-courses"
+    );
+    return response;
+  },
+
   getRecommendedCourses: async (): Promise<Course[]> => {
     const response = await studentApi.get<Course[]>(
       "/learning/course/recommended"
