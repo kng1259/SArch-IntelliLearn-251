@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import vn.edu.hcmut.intellilearn.teachingservice.controller.datatype.ApiResponse;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.KeycloakPrincipal;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachinganalyzer.TeachingAnalyzerService;
-import vn.edu.hcmut.intellilearn.teachingservice.domain.teachinganalyzer.datatype.CourseAnalysisResponse;
+import vn.edu.hcmut.intellilearn.teachingservice.domain.teachinganalyzer.datatype.ReportResponse;
 
 import java.util.UUID;
 
@@ -18,8 +18,8 @@ public class TeachingAnalyzerController {
     private final TeachingAnalyzerService teachingAnalyzerService;
 
     @GetMapping("/analysis/course/{courseId}")
-    public ApiResponse<CourseAnalysisResponse> getCourseAnalysis(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable("courseId") UUID courseId) {
-        return ApiResponse.<CourseAnalysisResponse>builder()
+    public ApiResponse<ReportResponse> getCourseAnalysis(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable("courseId") UUID courseId) {
+        return ApiResponse.<ReportResponse>builder()
                 .message("Lấy thông tin thống kê Course thành công")
                 .data(teachingAnalyzerService.retrieveCourseAnalysis(principal.userId(), courseId))
                 .build();

@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface SubmissionRepository extends JpaRepository<Submission, SubmissionId> {
     @Query(value = """
-    select distinct on (s.assignment_id, s.student_id) s.*
+    select s.*
     from submission s
     join assignment a on s.assignment_id = a.assignment_id
     where a.course_id = :courseId

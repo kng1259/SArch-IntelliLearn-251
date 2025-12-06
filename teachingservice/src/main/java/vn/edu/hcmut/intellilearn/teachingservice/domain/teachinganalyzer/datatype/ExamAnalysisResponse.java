@@ -3,16 +3,17 @@ package vn.edu.hcmut.intellilearn.teachingservice.domain.teachinganalyzer.dataty
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CourseAnalysisResponse {
+public class ExamAnalysisResponse {
+    UUID id;
+    String name;
+    Integer avgScore;
     Integer totalStudents;
-    Long avgCompletionPercentage;
-    CourseCompletionResponse courseCompletionResponse;
-    List<MonthlyStudentEnrollmentStatsResponse> monthlyStudentEnrollmentStats;
+    Integer passRate;
 }

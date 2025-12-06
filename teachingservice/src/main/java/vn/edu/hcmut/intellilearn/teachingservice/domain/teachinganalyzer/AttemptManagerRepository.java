@@ -6,5 +6,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface AttemptManagerRepository {
-    public List<Attempt> selectCourseAttempt(UUID courseId);
+    public List<Attempt> selectExamAttempt(UUID courseId);
+    public List<Attempt> selectQuizAttempt(UUID courseId);
 }

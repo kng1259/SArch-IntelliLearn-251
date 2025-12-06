@@ -14,7 +14,12 @@ public class AttemptManagerRepositoryImpl implements AttemptManagerRepository {
     private final AttemptRepository attemptRepository;
 
     @Override
-    public List<Attempt> selectCourseAttempt(UUID courseId) {
-        return attemptRepository.selectAllByCourseId(courseId);
+    public List<Attempt> selectExamAttempt(UUID courseId) {
+        return attemptRepository.selectExamAttemptByCourseId(courseId);
+    }
+
+    @Override
+    public List<Attempt> selectQuizAttempt(UUID courseId) {
+        return attemptRepository.selectQuizAttemptByCourseId(courseId);
     }
 }

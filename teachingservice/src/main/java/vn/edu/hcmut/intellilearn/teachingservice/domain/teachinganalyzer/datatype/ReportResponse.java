@@ -10,9 +10,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CourseAnalysisResponse {
-    Integer totalStudents;
-    Long avgCompletionPercentage;
-    CourseCompletionResponse courseCompletionResponse;
-    List<MonthlyStudentEnrollmentStatsResponse> monthlyStudentEnrollmentStats;
+public class ReportResponse {
+    CourseAnalysisResponse courseAnalysis;
+    List<QuizAnalysisResponse> quizAnalysis;
+    List<ExamAnalysisResponse> examAnalysis;
+    List<AssignmentAnalysisResponse> assignmentAnalysis;
 }

@@ -10,18 +10,20 @@ import java.util.UUID;
 
 public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
     @Query(value = """
-    select distinct on (a.test_id) a.*
+    select a.*
     from attempt a
     join exam e on a.test_id = e.test_id
     where e.course_id = :courseId
+    """,
+            nativeQuery = true)
+    List<Attempt> selectExamAttemptByCourseId(UUID courseId);
 
-    union
-
-    select distinct on (a.test_id) a.*
+    @Query(value = """
+    select a.*
     from attempt a
     join quiz q on a.test_id = q.test_id
     where q.course_id = :courseId
     """,
             nativeQuery = true)
-    List<Attempt> selectAllByCourseId(UUID courseId);
+    List<Attempt> selectQuizAttemptByCourseId(UUID courseId);
 }
