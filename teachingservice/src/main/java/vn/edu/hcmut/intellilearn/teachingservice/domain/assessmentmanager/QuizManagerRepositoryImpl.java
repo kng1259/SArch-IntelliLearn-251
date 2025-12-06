@@ -25,7 +25,7 @@ public class QuizManagerRepositoryImpl implements QuizManagerRepository {
 
     @Override
     public Quiz selectQuiz(UUID quizId) {
-        return quizRepository.findById(quizId).orElse(null);
+        return quizRepository.findDetailById(quizId).orElse(null);
     }
 
     @Override

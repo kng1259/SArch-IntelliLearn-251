@@ -6,6 +6,9 @@ import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Submission;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.SubmissionId;
 import vn.edu.hcmut.intellilearn.teachingservice.core.repository.SubmissionRepository;
 
+import java.util.List;
+import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -20,5 +23,10 @@ public class SubmissionManagerRepositoryImpl implements SubmissionManagerReposit
     @Override
     public Submission getSubmission(SubmissionId submissionId) {
         return submissionRepository.findById(submissionId).orElse(null);
+    }
+
+    @Override
+    public List<Submission> selectSubmissionByCourseId(UUID courseId) {
+        return submissionRepository.selectAllByCourseId(courseId);
     }
 }

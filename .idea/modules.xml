@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/SArch-IntelliLearn-251.git.iml" filepath="$PROJECT_DIR$/.idea/SArch-IntelliLearn-251.git.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/learningservice.main.iml" filepath="$PROJECT_DIR$/.idea/modules/learningservice.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/teachingservice.main.iml" filepath="$PROJECT_DIR$/.idea/modules/teachingservice.main.iml" />
     </modules>
   </component>

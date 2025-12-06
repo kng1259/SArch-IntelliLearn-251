@@ -3,5 +3,8 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/postgres/initdb/04-update-exam-foreign_key.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/postgres/initdb/05-update-quiz-foreign_key.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/teachingservice/src/main/java/vn/edu/hcmut/intellilearn/teachingservice/core/repository/AttemptRepository.java" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/teachingservice/src/main/java/vn/edu/hcmut/intellilearn/teachingservice/core/repository/SubmissionRepository.java" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/teachingservice/src/main/java/vn/edu/hcmut/intellilearn/teachingservice/core/repository/TestRepository.java" dialect="GenericSQL" />
   </component>
 </project>

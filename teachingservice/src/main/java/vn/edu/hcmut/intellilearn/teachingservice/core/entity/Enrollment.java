@@ -9,6 +9,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -27,6 +28,6 @@ public class Enrollment {
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "\"timestamp\"", nullable = false)
-    private Instant timestamp;
+    private LocalDateTime timestamp;
 
 }
