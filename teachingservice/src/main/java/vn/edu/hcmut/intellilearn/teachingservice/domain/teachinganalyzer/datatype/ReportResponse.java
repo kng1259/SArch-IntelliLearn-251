@@ -15,4 +15,5 @@ public class ReportResponse {
     List<QuizAnalysisResponse> quizAnalysis;
     List<ExamAnalysisResponse> examAnalysis;
     List<AssignmentAnalysisResponse> assignmentAnalysis;
+    StudyTimeAnalysisResponse studyTimeAnalysis;
 }
