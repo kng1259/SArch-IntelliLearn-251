@@ -53,7 +53,6 @@ const CourseDetail = ({
       try {
         const res = await courseService.getCourseDetails(id);
         setCourseData(res);
-        console.log("Course details:", res);
 
         const courseFeedbacks = await courseService.getCourseFeedbacks(id);
         setFeedbacks(courseFeedbacks);
@@ -98,7 +97,7 @@ const CourseDetail = ({
     if (!files) return;
 
     if (files.length > MAX_FILES) {
-      alert(`Bạn chỉ được phép chọn tối đa ${MAX_FILES} file.`);
+      alert(`You can only upload ${MAX_FILES} file.`);
       event.target.value = "";
       return;
     }
@@ -113,15 +112,13 @@ const CourseDetail = ({
       const fileName = file.name.toLowerCase();
 
       if (!allowedFileTypesRegex.test(fileName)) {
-        alert(`File ${file.name} không đúng điều kiện.`);
+        alert(`File ${file.name} not allowed.`);
         event.target.value = "";
         return;
       }
     }
 
     setFiles(Array.from(files));
-
-    console.log(`Đã chọn ${files.length} file.`);
   };
 
   const handleUploadAssignment = async (assignmentId: string) => {
@@ -131,7 +128,6 @@ const CourseDetail = ({
         content: files[0].type,
         assignmentId: assignmentId,
       });
-      console.log(res);
     } catch (error) {
       console.error("Error uploading assignment:", error);
     } finally {
@@ -228,11 +224,7 @@ const CourseDetail = ({
                         <Button
                           className="w-full text-black"
                           variant="outline"
-                          onClick={() =>
-                            router.push(
-                              `/student/my-courses/${courseData.course.id}/grades`
-                            )
-                          }
+                          onClick={() => router.push(`/student/grades`)}
                         >
                           View Grades
                         </Button>

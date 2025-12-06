@@ -46,8 +46,16 @@ export default function StudentDashboard() {
   const getEnrolledCourse = async () => {
     try {
       const res = await courseService.getEnrolledCourses();
-      // console.log("Enrolled courses:", res);
       setEnrolledCourses(res);
+
+      const enrolledCourseIds = res.map((course) => course.id);
+
+      if (typeof window !== undefined) {
+        localStorage.setItem(
+          "enrolledCourseIds",
+          JSON.stringify(enrolledCourseIds)
+        );
+      }
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
     }
@@ -80,7 +88,6 @@ export default function StudentDashboard() {
 
   const onSignOut = async () => {
     await authService.logout().then(() => router.push("/signin"));
-    console.log("User signed out");
   };
 
   return (
@@ -97,7 +104,7 @@ export default function StudentDashboard() {
               <Button
                 className="hover:cursor-pointer"
                 variant="ghost"
-                onClick={() => console.log("Navigate to grades")}
+                onClick={() => router.push("/student/grades")}
               >
                 <Award className="w-4 h-4 mr-2" />
                 My Grades
@@ -212,7 +219,6 @@ export default function StudentDashboard() {
                   key={course.id}
                   className="hover:shadow-lg hover:cursor-pointer hover:opacity-90 transition-shadow cursor-pointer"
                   onClick={() => {
-                    console.log(`Navigate to course ${course.id}`);
                     router.push(`/student/my-courses/${course.id}`);
                   }}
                 >
@@ -258,9 +264,7 @@ export default function StudentDashboard() {
                       <Button
                         className="w-full bg-black text-white!"
                         variant={"ghost"}
-                        onClick={() =>
-                          console.log(`Continue learning ${course.id}`)
-                        }
+                        onClick={() => router.push(`/student/dashboard`)}
                       >
                         Continue Learning
                       </Button>
@@ -333,7 +337,6 @@ export default function StudentDashboard() {
                           } else {
                             router.push(`/student/courses/${course.id}`);
                           }
-                          console.log(`View course ${course.id}`);
                         }}
                       >
                         View Course
