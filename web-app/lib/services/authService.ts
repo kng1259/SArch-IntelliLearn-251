@@ -1,9 +1,13 @@
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 
-const KEYCLOAK_URL = process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:8083';
-const KEYCLOAK_REALM = process.env.NEXT_PUBLIC_KEYCLOAK_REALM || 'intellilearn';
-const KEYCLOAK_CLIENT_ID = process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'nginx';
-const KEYCLOAK_CLIENT_SECRET = process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_SECRET || 'w5upehqrRr3xTL57IRAX0Vn5U6zGitbr';
+const KEYCLOAK_URL =
+  process.env.NEXT_PUBLIC_KEYCLOAK_URL || "http://localhost:8083";
+const KEYCLOAK_REALM = process.env.NEXT_PUBLIC_KEYCLOAK_REALM || "intellilearn";
+const KEYCLOAK_CLIENT_ID =
+  process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || "nginx";
+const KEYCLOAK_CLIENT_SECRET =
+  process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_SECRET ||
+  "w5upehqrRr3xTL57IRAX0Vn5U6zGitbr";
 
 const TOKEN_ENDPOINT = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
 const USERINFO_ENDPOINT = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/userinfo`;
@@ -16,7 +20,7 @@ export interface TokenResponse {
   refresh_token: string;
   token_type: string;
   id_token: string;
-  'not-before-policy': number;
+  "not-before-policy": number;
   session_state: string;
   scope: string;
 }
@@ -69,10 +73,10 @@ class AuthService {
 
   constructor() {
     // Load tokens from localStorage on initialization
-    if (typeof window !== 'undefined') {
-      this.accessToken = localStorage.getItem('access_token');
-      this.refreshToken = localStorage.getItem('refresh_token');
-      const expiry = localStorage.getItem('token_expiry');
+    if (typeof window !== "undefined") {
+      this.accessToken = localStorage.getItem("access_token");
+      this.refreshToken = localStorage.getItem("refresh_token");
+      const expiry = localStorage.getItem("token_expiry");
       this.tokenExpiry = expiry ? parseInt(expiry, 10) : null;
     }
   }
@@ -83,24 +87,24 @@ class AuthService {
   async login(username: string, password: string): Promise<UserInfo> {
     try {
       const formData = new URLSearchParams();
-      formData.append('grant_type', 'password');
-      formData.append('client_id', KEYCLOAK_CLIENT_ID);
-      formData.append('client_secret', KEYCLOAK_CLIENT_SECRET);
-      formData.append('username', username);
-      formData.append('password', password);
-      formData.append('scope', 'openid profile email');
+      formData.append("grant_type", "password");
+      formData.append("client_id", KEYCLOAK_CLIENT_ID);
+      formData.append("client_secret", KEYCLOAK_CLIENT_SECRET);
+      formData.append("username", username);
+      formData.append("password", password);
+      formData.append("scope", "openid profile email");
 
       const response = await fetch(TOKEN_ENDPOINT, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: formData.toString(),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error_description || 'Login failed');
+        throw new Error(error.error_description || "Login failed");
       }
 
       const tokenData: TokenResponse = await response.json();
@@ -110,7 +114,7 @@ class AuthService {
       const userInfo = await this.getUserInfo();
       return userInfo;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   }
@@ -125,15 +129,15 @@ class AuthService {
 
     try {
       const formData = new URLSearchParams();
-      formData.append('grant_type', 'refresh_token');
-      formData.append('client_id', KEYCLOAK_CLIENT_ID);
-      formData.append('client_secret', KEYCLOAK_CLIENT_SECRET);
-      formData.append('refresh_token', this.refreshToken);
+      formData.append("grant_type", "refresh_token");
+      formData.append("client_id", KEYCLOAK_CLIENT_ID);
+      formData.append("client_secret", KEYCLOAK_CLIENT_SECRET);
+      formData.append("refresh_token", this.refreshToken);
 
       const response = await fetch(TOKEN_ENDPOINT, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: formData.toString(),
       });
@@ -147,7 +151,7 @@ class AuthService {
       this.setTokens(tokenData);
       return true;
     } catch (error) {
-      console.error('Token refresh error:', error);
+      console.error("Token refresh error:", error);
       this.clearTokens();
       return false;
     }
@@ -159,23 +163,23 @@ class AuthService {
   async getUserInfo(): Promise<UserInfo> {
     const token = await this.getValidToken();
     if (!token) {
-      throw new Error('No valid token available');
+      throw new Error("No valid token available");
     }
 
     try {
       const response = await fetch(USERINFO_ENDPOINT, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch user info');
+        throw new Error("Failed to fetch user info");
       }
 
       const userInfo = await response.json();
-      
+
       // Decode token to get roles
       const decoded = this.decodeToken(token);
       const roles = decoded?.realm_access?.roles || [];
@@ -185,7 +189,7 @@ class AuthService {
         roles,
       };
     } catch (error) {
-      console.error('Get user info error:', error);
+      console.error("Get user info error:", error);
       throw error;
     }
   }
@@ -197,20 +201,25 @@ class AuthService {
     if (this.refreshToken) {
       try {
         const formData = new URLSearchParams();
-        formData.append('client_id', KEYCLOAK_CLIENT_ID);
-        formData.append('client_secret', KEYCLOAK_CLIENT_SECRET);
-        formData.append('refresh_token', this.refreshToken);
+        formData.append("client_id", KEYCLOAK_CLIENT_ID);
+        formData.append("client_secret", KEYCLOAK_CLIENT_SECRET);
+        formData.append("refresh_token", this.refreshToken);
 
         await fetch(LOGOUT_ENDPOINT, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            "Content-Type": "application/x-www-form-urlencoded",
           },
           body: formData.toString(),
         });
       } catch (error) {
-        console.error('Logout error:', error);
+        console.error("Logout error:", error);
       }
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("enrolledCourseIds");
+      localStorage.removeItem("studentId");
     }
 
     this.clearTokens();
@@ -250,7 +259,7 @@ class AuthService {
       return true;
     }
     // Add 60 second buffer to refresh before actual expiry
-    return Date.now() >= (this.tokenExpiry - 60000);
+    return Date.now() >= this.tokenExpiry - 60000;
   }
 
   /**
@@ -260,7 +269,7 @@ class AuthService {
     try {
       return jwtDecode<DecodedToken>(token);
     } catch (error) {
-      console.error('Token decode error:', error);
+      console.error("Token decode error:", error);
       return null;
     }
   }
@@ -299,14 +308,14 @@ class AuthService {
    * Check if user is a tutor
    */
   isTutor(): boolean {
-    return this.hasRole('TUTOR') || this.hasRole('ADMIN');
+    return this.hasRole("TUTOR") || this.hasRole("ADMIN");
   }
 
   /**
    * Check if user is a student
    */
   isStudent(): boolean {
-    return this.hasRole('STUDENT');
+    return this.hasRole("STUDENT");
   }
 
   /**
@@ -315,12 +324,12 @@ class AuthService {
   private setTokens(tokenData: TokenResponse): void {
     this.accessToken = tokenData.access_token;
     this.refreshToken = tokenData.refresh_token;
-    this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
+    this.tokenExpiry = Date.now() + tokenData.expires_in * 1000;
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', tokenData.access_token);
-      localStorage.setItem('refresh_token', tokenData.refresh_token);
-      localStorage.setItem('token_expiry', this.tokenExpiry.toString());
+    if (typeof window !== "undefined") {
+      localStorage.setItem("access_token", tokenData.access_token);
+      localStorage.setItem("refresh_token", tokenData.refresh_token);
+      localStorage.setItem("token_expiry", this.tokenExpiry.toString());
     }
   }
 
@@ -332,11 +341,11 @@ class AuthService {
     this.refreshToken = null;
     this.tokenExpiry = null;
 
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('token_expiry');
-      localStorage.removeItem('tutorId'); // Clear tutor ID as well
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("token_expiry");
+      localStorage.removeItem("tutorId"); // Clear tutor ID as well
     }
   }
 

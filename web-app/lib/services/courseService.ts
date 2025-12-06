@@ -37,7 +37,7 @@ interface Material {
   updatedAt: string;
 }
 
-interface Assignment {
+export interface Assignment {
   id: string;
   name: string;
   description: string;
