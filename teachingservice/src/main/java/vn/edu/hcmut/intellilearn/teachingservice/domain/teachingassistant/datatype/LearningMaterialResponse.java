@@ -12,6 +12,7 @@ import java.util.UUID;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class LearningMaterialResponse {
+    UUID id;
     String name;
     String content;
     UUID courseId;

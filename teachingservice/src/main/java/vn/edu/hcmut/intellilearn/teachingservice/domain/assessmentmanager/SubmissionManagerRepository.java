@@ -10,4 +10,6 @@ public interface SubmissionManagerRepository {
     public void gradingSubmission(Submission submission);
     public Submission getSubmission(SubmissionId  submissionId);
     public List<Submission> selectSubmissionByCourseId(UUID courseId);
+    public List<Submission> selectPendingSubmissionsByTutorId(UUID tutorId);
+    public List<Submission> selectSubmissionsByAssignmentId(UUID assignmentId);
 }

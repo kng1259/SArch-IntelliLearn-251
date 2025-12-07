@@ -1,16 +1,27 @@
 'use client';
 
-interface AssignmentsTabProps {
-  assignments: Array<{
-    id: string;
-    title: string;
-    module: string;
-    dueDate: string;
-  }>;
-  onAddClick: () => void;
+import Link from 'next/link';
+
+interface Assignment {
+  id: string;
+  title: string;
+  module: string;
+  dueDate: string;
 }
 
-export default function AssignmentsTab({ assignments, onAddClick }: AssignmentsTabProps) {
+interface AssignmentsTabProps {
+  assignments: Assignment[];
+  onAddClick: () => void;
+  onEditClick: (assignment: Assignment) => void;
+  onDeleteClick: (assignmentId: string) => void;
+}
+
+export default function AssignmentsTab({ assignments, onAddClick, onEditClick, onDeleteClick }: AssignmentsTabProps) {
+  const handleDelete = (assignment: Assignment) => {
+    if (confirm(`Bạn có chắc muốn xóa "${assignment.title}"?`)) {
+      onDeleteClick(assignment.id);
+    }
+  };
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6">
@@ -54,15 +65,26 @@ export default function AssignmentsTab({ assignments, onAddClick }: AssignmentsT
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="text-sm text-gray-700 hover:text-gray-900 font-medium">
+              <Link 
+                href={`/tutor/grading/${assignment.id}`}
+                className="text-sm text-gray-700 hover:text-gray-900 font-medium"
+              >
                 Grade Submissions
-              </button>
-              <button className="p-2 hover:bg-gray-200 rounded-lg">
+              </Link>
+              <button 
+                onClick={() => onEditClick(assignment)}
+                className="p-2 hover:bg-gray-200 rounded-lg"
+                title="Edit assignment"
+              >
                 <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </button>
-              <button className="p-2 hover:bg-red-100 rounded-lg">
+              <button 
+                onClick={() => handleDelete(assignment)}
+                className="p-2 hover:bg-red-100 rounded-lg"
+                title="Delete assignment"
+              >
                 <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>

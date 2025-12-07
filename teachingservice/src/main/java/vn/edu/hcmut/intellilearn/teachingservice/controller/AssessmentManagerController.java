@@ -172,4 +172,29 @@ public class AssessmentManagerController {
                 .message("Chấm điểm assignment thành công")
                 .build();
     }
+
+    @GetMapping("/submission/pending")
+    public ApiResponse<List<PendingSubmissionResponse>> getPendingSubmissions(
+            @AuthenticationPrincipal KeycloakPrincipal principal
+    ) {
+        var submissions = assessmentManagerService.retrievePendingSubmissions(principal.userId());
+        return ApiResponse.<List<PendingSubmissionResponse>>builder()
+                .data(submissions)
+                .success(true)
+                .message("Lấy danh sách bài chưa chấm điểm thành công")
+                .build();
+    }
+
+    @GetMapping("/submission/assignment/{assignmentId}")
+    public ApiResponse<List<SubmissionResponse>> getSubmissionsByAssignment(
+            @AuthenticationPrincipal KeycloakPrincipal principal,
+            @PathVariable UUID assignmentId
+    ) {
+        var submissions = assessmentManagerService.retrieveSubmissionsByAssignment(principal.userId(), assignmentId);
+        return ApiResponse.<List<SubmissionResponse>>builder()
+                .data(submissions)
+                .success(true)
+                .message("Lấy danh sách bài nộp thành công")
+                .build();
+    }
 }

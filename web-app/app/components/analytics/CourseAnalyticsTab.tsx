@@ -14,6 +14,10 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
+import { 
+  MonthlyStudentEnrollmentStatsResponse, 
+  CourseCompletionResponse 
+} from '@/lib/services/analyticsService';
 
 // Register ChartJS components
 ChartJS.register(
@@ -36,16 +40,21 @@ interface CourseAnalyticsTabProps {
     courseRating: number;
     avgStudyTime: string;
   };
+  enrollmentStats?: MonthlyStudentEnrollmentStatsResponse[];
+  completionData?: CourseCompletionResponse;
 }
 
-export default function CourseAnalyticsTab({ stats }: CourseAnalyticsTabProps) {
-  // Enrollment Growth Data
+export default function CourseAnalyticsTab({ stats, enrollmentStats, completionData: apiCompletionData }: CourseAnalyticsTabProps) {
+  // Enrollment Growth Data from API or fallback to mock
+  const enrollmentLabels = enrollmentStats?.map(s => s.month) || ['Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+  const enrollmentValues = enrollmentStats?.map(s => s.count) || [120, 310, 420, 890, 1150];
+  
   const enrollmentData = {
-    labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov'],
+    labels: enrollmentLabels,
     datasets: [
       {
         label: 'Total Students',
-        data: [120, 310, 420, 890, 1150],
+        data: enrollmentValues,
         borderColor: '#818CF8',
         backgroundColor: 'rgba(129, 140, 248, 0.1)',
         tension: 0.4,
@@ -97,12 +106,21 @@ export default function CourseAnalyticsTab({ stats }: CourseAnalyticsTabProps) {
     },
   };
 
-  // Course Completion Data
+  // Course Completion Data from API or fallback to mock
+  const completed = apiCompletionData?.completed || 45;
+  const inProgress = apiCompletionData?.inProgress || 40;
+  const notStarted = apiCompletionData?.notStarted || 15;
+  const total = completed + inProgress + notStarted || 100;
+  
+  const completedPercent = Math.round((completed / total) * 100);
+  const inProgressPercent = Math.round((inProgress / total) * 100);
+  const notStartedPercent = Math.round((notStarted / total) * 100);
+  
   const completionData = {
-    labels: ['Completed: 45%', 'In Progress: 40%', 'Not Started: 15%'],
+    labels: [`Completed: ${completedPercent}%`, `In Progress: ${inProgressPercent}%`, `Not Started: ${notStartedPercent}%`],
     datasets: [
       {
-        data: [45, 40, 15],
+        data: [completed, inProgress, notStarted],
         backgroundColor: ['#10B981', '#818CF8', '#E5E7EB'],
         borderWidth: 0,
       },

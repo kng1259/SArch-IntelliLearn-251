@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -21,8 +23,8 @@ public class MinioServiceImpl implements MinioService {
     @Value("${minio.bucket-name}")
     private String bucketName;
 
-    @Value("${minio.url}")
-    private String url;
+    @Value("${minio.public-url:${minio.url}}")
+    private String publicUrl;
 
     @Override
     public String uploadFile(MultipartFile file){
@@ -33,7 +35,12 @@ public class MinioServiceImpl implements MinioService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
 
-            String fileName = UUID.randomUUID().toString()+"_"+file.getOriginalFilename();
+            String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+            String fileName = UUID.randomUUID().toString() + "_" + originalFilename;
+
+            // Set Content-Disposition header để browser download file thay vì mở trực tiếp
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Content-Disposition", "attachment; filename=\"" + originalFilename + "\"");
 
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -41,10 +48,11 @@ public class MinioServiceImpl implements MinioService {
                             .object(fileName)
                             .stream(file.getInputStream(), file.getSize(), -1)
                             .contentType(file.getContentType())
+                            .headers(headers)
                             .build()
             );
 
-            return String.format("\"%s/%s/%s\"",url,bucketName,fileName);
+            return String.format("%s/%s/%s", publicUrl, bucketName, fileName);
         }
         catch (Exception e) {
             log.error("Error when upload file to MinIO", e);

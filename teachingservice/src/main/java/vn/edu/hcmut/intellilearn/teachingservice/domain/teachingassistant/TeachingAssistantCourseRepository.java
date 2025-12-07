@@ -8,5 +8,6 @@ import java.util.UUID;
 public interface TeachingAssistantCourseRepository{
     public Course insertCourse(UUID tutorId, Course course);
     public List<Course> selectTutorCourses(UUID tutorId);
+    public Course getCourse(UUID courseId);
     public Course updateCourse(Course course);
 }

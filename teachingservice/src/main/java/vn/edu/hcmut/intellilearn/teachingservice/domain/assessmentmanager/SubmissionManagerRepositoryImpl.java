@@ -29,4 +29,14 @@ public class SubmissionManagerRepositoryImpl implements SubmissionManagerReposit
     public List<Submission> selectSubmissionByCourseId(UUID courseId) {
         return submissionRepository.selectAllByCourseId(courseId);
     }
+
+    @Override
+    public List<Submission> selectPendingSubmissionsByTutorId(UUID tutorId) {
+        return submissionRepository.selectPendingSubmissionsByTutorId(tutorId);
+    }
+
+    @Override
+    public List<Submission> selectSubmissionsByAssignmentId(UUID assignmentId) {
+        return submissionRepository.selectAllByAssignmentId(assignmentId);
+    }
 }

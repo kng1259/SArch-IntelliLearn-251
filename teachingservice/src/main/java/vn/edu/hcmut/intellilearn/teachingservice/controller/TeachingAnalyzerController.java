@@ -20,6 +20,7 @@ public class TeachingAnalyzerController {
     @GetMapping("/analysis/course/{courseId}")
     public ApiResponse<ReportResponse> getCourseAnalysis(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable("courseId") UUID courseId) {
         return ApiResponse.<ReportResponse>builder()
+                .success(true)
                 .message("Lấy thông tin thống kê Course thành công")
                 .data(teachingAnalyzerService.retrieveCourseAnalysis(principal.userId(), courseId))
                 .build();

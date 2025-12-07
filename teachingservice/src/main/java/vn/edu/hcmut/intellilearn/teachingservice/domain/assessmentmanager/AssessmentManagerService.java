@@ -22,4 +22,6 @@ public interface AssessmentManagerService {
     public void updateAssignment(UUID tutorId, UUID assignmentId, AssignmentRequest assignment);
     public void deleteAssignment(UUID tutorId, UUID assignmentId);
     public void gradingSubmission(UUID tutorId,UUID studentId, UUID assignmentId, GradingRequest gradingRequest);
+    public List<PendingSubmissionResponse> retrievePendingSubmissions(UUID tutorId);
+    public List<SubmissionResponse> retrieveSubmissionsByAssignment(UUID tutorId, UUID assignmentId);
 }

@@ -34,7 +34,8 @@ server:
     context-path: /api/v1
 
 minio:
-  url: http://localhost:9000
+  url: http://minio:9000
+  public-url: http://localhost:9000
   access-key: admin
   secret-key: iamadmin
   bucket-name: its

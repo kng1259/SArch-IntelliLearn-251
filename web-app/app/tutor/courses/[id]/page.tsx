@@ -8,13 +8,19 @@ import AddMaterialModal from '@/app/components/modals/AddMaterialModal';
 import CreateQuizModal from '@/app/components/modals/CreateQuizModal';
 import EditQuizModal from '@/app/components/modals/EditQuizModal';
 import CreateAssignmentModal from '@/app/components/modals/CreateAssignmentModal';
+import EditAssignmentModal from '@/app/components/modals/EditAssignmentModal';
 import CreateExamModal from '@/app/components/modals/CreateExamModal';
+import EditExamModal from '@/app/components/modals/EditExamModal';
+import EditMaterialModal from '@/app/components/modals/EditMaterialModal';
+import CreateModuleModal from '@/app/components/modals/CreateModuleModal';
+import EditModuleModal from '@/app/components/modals/EditModuleModal';
 import OverviewTab from '@/app/components/course/OverviewTab';
 import MaterialsTab from '@/app/components/course/MaterialsTab';
 import QuizzesTab from '@/app/components/course/QuizzesTab';
 import AssignmentsTab from '@/app/components/course/AssignmentsTab';
 import ExamsTab from '@/app/components/course/ExamsTab';
 import { useToast } from '@/app/components/Toast';
+import courseService, { CourseRequest, LearningMaterial, ModuleResponse } from '@/lib/services/courseService';
 import assessmentService, { 
   ExamRequest, 
   ExamResponse,
@@ -54,6 +60,21 @@ interface UIExam {
   status: string;
 }
 
+interface UIMaterial {
+  id: string;
+  title: string;
+  module: string;
+  type: string;
+  url?: string;
+}
+
+interface UIModule {
+  id: string;
+  name: string;
+  description?: string;
+  order: number;
+}
+
 export default function CourseManagement({ params }: { params: Promise<{ id: string }> }) {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -63,7 +84,16 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
   const [isEditQuizModalOpen, setIsEditQuizModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<UIQuiz | null>(null);
   const [isAddAssignmentModalOpen, setIsAddAssignmentModalOpen] = useState(false);
+  const [isEditAssignmentModalOpen, setIsEditAssignmentModalOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<UIAssignment | null>(null);
   const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
+  const [isEditExamModalOpen, setIsEditExamModalOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState<UIExam | null>(null);
+  const [isEditMaterialModalOpen, setIsEditMaterialModalOpen] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<UIMaterial | null>(null);
+  const [isAddModuleModalOpen, setIsAddModuleModalOpen] = useState(false);
+  const [isEditModuleModalOpen, setIsEditModuleModalOpen] = useState(false);
+  const [selectedModule, setSelectedModule] = useState<UIModule | null>(null);
   const [courseInfo, setCourseInfo] = useState({
     title: 'Introduction to Web Development',
     description: 'Learn the fundamentals of HTML, CSS, and JavaScript to build modern websites',
@@ -74,9 +104,14 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
   const [exams, setExams] = useState<UIExam[]>([]);
   const [quizzes, setQuizzes] = useState<UIQuiz[]>([]);
   const [assignments, setAssignments] = useState<UIAssignment[]>([]);
+  const [materials, setMaterials] = useState<UIMaterial[]>([]);
+  const [modules, setModules] = useState<UIModule[]>([]);
+  const [students, setStudents] = useState<{ id: string; fullName: string }[]>([]);
+  const [loadingCourse, setLoadingCourse] = useState(true);
   const [loadingExams, setLoadingExams] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
+  const [loadingMaterials, setLoadingMaterials] = useState(true);
 
   // Unwrap params
   const { id } = use(params);
@@ -135,76 +170,89 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Fetch assessments from API
+  const fetchCourseInfo = async () => {
+    try {
+      const data = await courseService.getCourseById(id);
+      setCourseInfo({
+        title: data.name,
+        description: data.description,
+        category: 'General', // Backend doesn't have category field
+      });
+    } catch (err) {
+      console.error('Failed to fetch course info:', err);
+    } finally {
+      setLoadingCourse(false);
+    }
+  };
+
+  const fetchMaterials = async () => {
+    try {
+      const data = await courseService.getMaterialsByCourse(id);
+      setMaterials(data.map((material: LearningMaterial): UIMaterial => ({
+        id: material.id || '',
+        title: material.name,
+        module: 'General',
+        type: 'document', // Default type
+        url: material.content,
+      })));
+    } catch (err) {
+      console.error('Failed to fetch materials:', err);
+    } finally {
+      setLoadingMaterials(false);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const data = await courseService.getCourseStudents(id);
+      setStudents(data);
+    } catch (err) {
+      console.error('Failed to fetch students:', err);
+    }
+  };
+
+  const fetchModules = async () => {
+    try {
+      const data = await courseService.getModulesByCourse(id);
+      setModules(data.map((module: ModuleResponse): UIModule => ({
+        id: module.id,
+        name: module.name,
+        description: module.description,
+        order: module.order,
+      })));
+    } catch (err) {
+      console.error('Failed to fetch modules:', err);
+    }
+  };
+
+  // Fetch all data from API
   useEffect(() => {
+    fetchCourseInfo();
     fetchExams();
     fetchQuizzes();
     fetchAssignments();
+    fetchMaterials();
+    fetchStudents();
+    fetchModules();
   }, [id]);
 
-  // Course data (materials and modules still mock, exams/quizzes/assignments from API)
+  // Course data from API
   const courseData = {
     id: id,
     title: courseInfo.title,
     description: courseInfo.description,
     category: courseInfo.category,
-    studentsEnrolled: 1234,
+    studentsEnrolled: students.length,
     rating: 4.8,
     maxRating: 5.0,
     duration: '8 weeks',
     stats: {
-      totalMaterials: 5,
+      totalMaterials: materials.length,
       totalQuizzes: quizzes.length,
       totalAssignments: assignments.length,
     },
-    modules: [
-      {
-        id: '1',
-        title: 'HTML Basics',
-        materials: 3,
-        quizzes: 1,
-        assignments: 1,
-      },
-      {
-        id: '2',
-        title: 'CSS Styling',
-        materials: 2,
-        quizzes: 0,
-        assignments: 1,
-      },
-    ],
-    materials: [
-      {
-        id: '1',
-        title: 'Introduction to HTML',
-        module: 'HTML Basics',
-        type: 'video',
-      },
-      {
-        id: '2',
-        title: 'HTML Elements',
-        module: 'HTML Basics',
-        type: 'document',
-      },
-      {
-        id: '3',
-        title: 'HTML5 Semantic Tags',
-        module: 'HTML Basics',
-        type: 'slides',
-      },
-      {
-        id: '4',
-        title: 'CSS Basics',
-        module: 'CSS Styling',
-        type: 'video',
-      },
-      {
-        id: '5',
-        title: 'Flexbox Layout',
-        module: 'CSS Styling',
-        type: 'video',
-      },
-    ],
+    modules: modules,
+    materials: materials,
   };
 
   const tabs = [
@@ -215,15 +263,39 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
     { id: 'exams', label: 'Exams' },
   ];
 
-  const handleSaveCourse = (data: { title: string; description: string; category: string }) => {
-    setCourseInfo(data);
-    // TODO: Call API to update course
-    console.log('Saving course:', data);
+  const handleSaveCourse = async (data: { title: string; description: string; category: string }) => {
+    try {
+      const courseRequest: CourseRequest = {
+        name: data.title,
+        description: data.description,
+        startAt: new Date().toISOString(),
+        endAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days from now
+      };
+      
+      await courseService.updateCourse(id, courseRequest);
+      setCourseInfo(data);
+      toast.success('Cập nhật khóa học thành công!');
+    } catch (err: any) {
+      console.error('Failed to update course:', err);
+      toast.error(`Lỗi cập nhật khóa học: ${err.message}`);
+    }
   };
 
-  const handleAddMaterial = (data: { title: string; type: string; module: string }) => {
-    // TODO: Call API to add material
-    console.log('Adding material:', data);
+  const handleAddMaterial = async (data: { title: string; type: string; moduleId: string; file: File | null }) => {
+    try {
+      await courseService.createLearningMaterial({
+        name: data.title,
+        content: data.file,
+        courseId: id,
+      });
+      
+      toast.success('Thêm tài liệu thành công!');
+      setIsAddMaterialModalOpen(false);
+      fetchMaterials(); // Refresh materials list
+    } catch (err: any) {
+      console.error('Failed to add material:', err);
+      toast.error(`Lỗi thêm tài liệu: ${err.message}`);
+    }
   };
 
   const handleAddQuiz = async (data: { title: string; description: string; startDate: string; timeLimit: number; passingScore: number; level: string }) => {
@@ -338,6 +410,174 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
     }
   };
 
+  // ============ Exam Edit/Delete Handlers ============
+  const handleEditExam = (exam: UIExam) => {
+    setSelectedExam(exam);
+    setIsEditExamModalOpen(true);
+  };
+
+  const handleUpdateExam = async (data: { name: string; description: string; startAt: string; duration: number }) => {
+    if (!selectedExam) return;
+    
+    try {
+      await assessmentService.updateExam(selectedExam.id, {
+        name: data.name,
+        description: data.description,
+        startAt: new Date(data.startAt).toISOString(),
+        duration: data.duration,
+      });
+      toast.success('Cập nhật exam thành công!');
+      setIsEditExamModalOpen(false);
+      setSelectedExam(null);
+      fetchExams();
+    } catch (err: any) {
+      console.error('Failed to update exam:', err);
+      toast.error(`Lỗi cập nhật exam: ${err.message}`);
+    }
+  };
+
+  const handleDeleteExam = async (examId: string) => {
+    try {
+      await assessmentService.deleteExam(examId);
+      toast.success('Xóa exam thành công!');
+      fetchExams();
+    } catch (err: any) {
+      console.error('Failed to delete exam:', err);
+      toast.error(`Lỗi xóa exam: ${err.message}`);
+    }
+  };
+
+  // ============ Assignment Edit/Delete Handlers ============
+  const handleEditAssignment = (assignment: UIAssignment) => {
+    setSelectedAssignment(assignment);
+    setIsEditAssignmentModalOpen(true);
+  };
+
+  const handleUpdateAssignment = async (data: { name: string; description: string; startAt: string; endAt: string }) => {
+    if (!selectedAssignment) return;
+    
+    try {
+      await assessmentService.updateAssignment(selectedAssignment.id, {
+        name: data.name,
+        description: data.description,
+        startAt: new Date(data.startAt).toISOString(),
+        endAt: new Date(data.endAt).toISOString(),
+        courseId: id,
+      });
+      toast.success('Cập nhật assignment thành công!');
+      setIsEditAssignmentModalOpen(false);
+      setSelectedAssignment(null);
+      fetchAssignments();
+    } catch (err: any) {
+      console.error('Failed to update assignment:', err);
+      toast.error(`Lỗi cập nhật assignment: ${err.message}`);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    try {
+      await assessmentService.deleteAssignment(assignmentId);
+      toast.success('Xóa assignment thành công!');
+      fetchAssignments();
+    } catch (err: any) {
+      console.error('Failed to delete assignment:', err);
+      toast.error(`Lỗi xóa assignment: ${err.message}`);
+    }
+  };
+
+  // ============ Material Edit/Delete Handlers ============
+  const handleEditMaterial = (material: UIMaterial) => {
+    setSelectedMaterial(material);
+    setIsEditMaterialModalOpen(true);
+  };
+
+  const handleUpdateMaterial = async (data: { name: string; content: string; file?: File | null }) => {
+    if (!selectedMaterial) return;
+    
+    try {
+      // Note: Backend may need an update endpoint for learning materials
+      // For now, we'll delete and recreate
+      await courseService.deleteLearningMaterial(selectedMaterial.id);
+      await courseService.createLearningMaterial({
+        name: data.name,
+        content: data.file || null,
+        courseId: id,
+      });
+      toast.success('Cập nhật tài liệu thành công!');
+      setIsEditMaterialModalOpen(false);
+      setSelectedMaterial(null);
+      fetchMaterials();
+    } catch (err: any) {
+      console.error('Failed to update material:', err);
+      toast.error(`Lỗi cập nhật tài liệu: ${err.message}`);
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId: string) => {
+    try {
+      await courseService.deleteLearningMaterial(materialId);
+      toast.success('Xóa tài liệu thành công!');
+      fetchMaterials();
+    } catch (err: any) {
+      console.error('Failed to delete material:', err);
+      toast.error(`Lỗi xóa tài liệu: ${err.message}`);
+    }
+  };
+
+  // Module handlers
+  const handleAddModule = async (data: { name: string; description: string }) => {
+    try {
+      await courseService.createModule({
+        name: data.name,
+        description: data.description,
+        order: modules.length + 1,
+        courseId: id,
+      });
+      toast.success('Thêm module thành công!');
+      setIsAddModuleModalOpen(false);
+      fetchModules();
+    } catch (err: any) {
+      console.error('Failed to add module:', err);
+      toast.error(`Lỗi thêm module: ${err.message}`);
+    }
+  };
+
+  const handleEditModule = (module: UIModule) => {
+    setSelectedModule(module);
+    setIsEditModuleModalOpen(true);
+  };
+
+  const handleUpdateModule = async (data: { name: string; description: string }) => {
+    if (!selectedModule) return;
+    
+    try {
+      await courseService.updateModule(selectedModule.id, {
+        name: data.name,
+        description: data.description,
+        order: selectedModule.order,
+        courseId: id,
+      });
+      toast.success('Cập nhật module thành công!');
+      setIsEditModuleModalOpen(false);
+      setSelectedModule(null);
+      fetchModules();
+    } catch (err: any) {
+      console.error('Failed to update module:', err);
+      toast.error(`Lỗi cập nhật module: ${err.message}`);
+    }
+  };
+
+  const handleDeleteModule = async (moduleId: string) => {
+    try {
+      await courseService.deleteModule(moduleId);
+      toast.success('Xóa module thành công!');
+      fetchModules();
+    } catch (err: any) {
+      console.error('Failed to delete module:', err);
+      toast.error(`Lỗi xóa module: ${err.message}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -416,11 +656,20 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'overview' && <OverviewTab courseData={courseData} />}
+        {activeTab === 'overview' && (
+          <OverviewTab 
+            courseData={courseData} 
+            onAddModuleClick={() => setIsAddModuleModalOpen(true)}
+            onEditModuleClick={handleEditModule}
+            onDeleteModuleClick={handleDeleteModule}
+          />
+        )}
         {activeTab === 'materials' && (
           <MaterialsTab 
             materials={courseData.materials} 
             onAddClick={() => setIsAddMaterialModalOpen(true)}
+            onEditClick={handleEditMaterial}
+            onDeleteClick={handleDeleteMaterial}
           />
         )}
         {activeTab === 'quizzes' && (
@@ -436,12 +685,16 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
           <AssignmentsTab 
             assignments={assignments}
             onAddClick={() => setIsAddAssignmentModalOpen(true)}
+            onEditClick={handleEditAssignment}
+            onDeleteClick={handleDeleteAssignment}
           />
         )}
         {activeTab === 'exams' && (
           <ExamsTab 
             exams={exams}
             onAddClick={() => setIsAddExamModalOpen(true)}
+            onEditClick={handleEditExam}
+            onDeleteClick={handleDeleteExam}
           />
         )}
       </main>
@@ -462,7 +715,7 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
       <AddMaterialModal
         isOpen={isAddMaterialModalOpen}
         onClose={() => setIsAddMaterialModalOpen(false)}
-        modules={courseData.modules}
+        modules={modules.map(m => ({ id: m.id, title: m.name }))}
         onAdd={handleAddMaterial}
       />
 
@@ -503,6 +756,73 @@ export default function CourseManagement({ params }: { params: Promise<{ id: str
         isOpen={isAddExamModalOpen}
         onClose={() => setIsAddExamModalOpen(false)}
         onAdd={handleAddExam}
+      />
+
+      {/* Edit Exam Modal */}
+      <EditExamModal
+        isOpen={isEditExamModalOpen}
+        onClose={() => {
+          setIsEditExamModalOpen(false);
+          setSelectedExam(null);
+        }}
+        exam={selectedExam ? {
+          id: selectedExam.id,
+          name: selectedExam.title,
+          description: '',
+          startAt: selectedExam.date,
+          duration: selectedExam.duration,
+        } : null}
+        onSave={handleUpdateExam}
+      />
+
+      {/* Edit Assignment Modal */}
+      <EditAssignmentModal
+        isOpen={isEditAssignmentModalOpen}
+        onClose={() => {
+          setIsEditAssignmentModalOpen(false);
+          setSelectedAssignment(null);
+        }}
+        assignment={selectedAssignment ? {
+          id: selectedAssignment.id,
+          name: selectedAssignment.title,
+          description: '',
+          startAt: '',
+          endAt: selectedAssignment.dueDate,
+        } : null}
+        onSave={handleUpdateAssignment}
+      />
+
+      {/* Edit Material Modal */}
+      <EditMaterialModal
+        isOpen={isEditMaterialModalOpen}
+        onClose={() => {
+          setIsEditMaterialModalOpen(false);
+          setSelectedMaterial(null);
+        }}
+        material={selectedMaterial ? {
+          id: selectedMaterial.id,
+          name: selectedMaterial.title,
+          content: selectedMaterial.url || '',
+        } : null}
+        onSave={handleUpdateMaterial}
+      />
+
+      {/* Create Module Modal */}
+      <CreateModuleModal
+        isOpen={isAddModuleModalOpen}
+        onClose={() => setIsAddModuleModalOpen(false)}
+        onAdd={handleAddModule}
+      />
+
+      {/* Edit Module Modal */}
+      <EditModuleModal
+        isOpen={isEditModuleModalOpen}
+        onClose={() => {
+          setIsEditModuleModalOpen(false);
+          setSelectedModule(null);
+        }}
+        module={selectedModule}
+        onSave={handleUpdateModule}
       />
     </div>
   );

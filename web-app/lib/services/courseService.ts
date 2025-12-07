@@ -90,7 +90,41 @@ export interface LearningMaterial {
 
 export interface LearningMaterialRequest {
   name: string;
-  content: string;
+  content?: File | null;  // File for upload
+  courseId: string;
+}
+
+// Module types matching backend
+export interface ModuleResponse {
+  id: string;
+  name: string;
+  description?: string;
+  order: number;
+  createdAt?: string;
+  courseId: string;
+}
+
+export interface ModuleRequest {
+  name: string;
+  description?: string;
+  order?: number;
+  courseId: string;
+}
+
+// Student types matching backend
+export interface ModuleRequest {
+  name: string;
+  description?: string;
+  order?: number;
+  courseId: string;
+}
+
+export interface ModuleResponse {
+  id: string;
+  name: string;
+  description?: string;
+  order: number;
+  createdAt?: string;
   courseId: string;
 }
 
@@ -113,6 +147,12 @@ const courseService = {
   getCoursesByTutor: async (tutorId: string): Promise<Course[]> => {
     // api.get already unwraps ApiResponse.data, so we get Course[] directly
     return api.get<Course[]>(`/course/tutor/${tutorId}`);
+  },
+
+  // Get course by ID
+  // GET /course/{courseId}
+  getCourseById: async (courseId: string): Promise<Course> => {
+    return api.get<Course>(`/course/${courseId}`);
   },
 
   // Create new course
@@ -142,12 +182,50 @@ const courseService = {
   createLearningMaterial: async (
     material: LearningMaterialRequest
   ): Promise<LearningMaterial> => {
-    return api.post<LearningMaterial>("/learning-material", material);
+    const formData = new FormData();
+    formData.append('name', material.name);
+    formData.append('courseId', material.courseId);
+    if (material.content) {
+      formData.append('content', material.content);
+    }
+    return api.postFormData<LearningMaterial>("/learning-material", formData);
+  },
+
+  // GET /learning-material/course/{courseId}
+  getMaterialsByCourse: async (courseId: string): Promise<LearningMaterial[]> => {
+    return api.get<LearningMaterial[]>(`/learning-material/course/${courseId}`);
   },
 
   // DELETE /learning-material/{materialId}
   deleteLearningMaterial: async (materialId: string): Promise<void> => {
     await api.delete<void>(`/learning-material/${materialId}`);
+  },
+
+  // ============ Module APIs ============
+
+  // POST /module
+  createModule: async (moduleData: ModuleRequest): Promise<ModuleResponse> => {
+    return api.post<ModuleResponse>("/module", moduleData);
+  },
+
+  // GET /module/{moduleId}
+  getModule: async (moduleId: string): Promise<ModuleResponse> => {
+    return api.get<ModuleResponse>(`/module/${moduleId}`);
+  },
+
+  // GET /module/course/{courseId}
+  getModulesByCourse: async (courseId: string): Promise<ModuleResponse[]> => {
+    return api.get<ModuleResponse[]>(`/module/course/${courseId}`);
+  },
+
+  // PUT /module/{moduleId}
+  updateModule: async (moduleId: string, moduleData: ModuleRequest): Promise<ModuleResponse> => {
+    return api.put<ModuleResponse>(`/module/${moduleId}`, moduleData);
+  },
+
+  // DELETE /module/{moduleId}
+  deleteModule: async (moduleId: string): Promise<void> => {
+    await api.delete<void>(`/module/${moduleId}`);
   },
 
   // Feedback

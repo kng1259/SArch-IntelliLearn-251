@@ -25,6 +25,11 @@ public class TeachingAssistantCourseRepositoryImpl implements TeachingAssistantC
     }
 
     @Override
+    public Course getCourse(UUID courseId) {
+        return courseRepository.findById(courseId).orElse(null);
+    }
+
+    @Override
     public Course updateCourse(Course course) {
         return courseRepository.save(course);
     }

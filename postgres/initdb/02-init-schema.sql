@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS course (
     tutor_id UUID NOT NULL
 );
 
+-- Table: MODULE
+-- Description: Course modules to organize content
+CREATE TABLE IF NOT EXISTS module (
+    module_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "name" VARCHAR(255) NOT NULL,
+    "description" TEXT,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    course_id UUID NOT NULL
+);
+
 -- Table: ENROLLMENT
 -- Description: Junction table for student-course many-to-many relationship
 CREATE TABLE IF NOT EXISTS enrollment (
@@ -201,6 +212,11 @@ ALTER TABLE material
     ADD CONSTRAINT fk_material_course
     FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE;
 
+-- Module foreign keys
+ALTER TABLE module
+    ADD CONSTRAINT fk_module_course
+    FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE;
+
 -- Assignment foreign keys
 ALTER TABLE assignment
     ADD CONSTRAINT fk_assignment_course
@@ -299,6 +315,7 @@ COMMENT ON TABLE level IS 'Difficulty levels for quizzes';
 COMMENT ON TABLE course IS 'Main course entity containing learning materials and assessments';
 COMMENT ON TABLE enrollment IS 'Junction table for student-course enrollment';
 COMMENT ON TABLE material IS 'Learning materials within courses';
+COMMENT ON TABLE module IS 'Course modules to organize content';
 COMMENT ON TABLE assignment IS 'Course assignments for students';
 COMMENT ON TABLE submission IS 'Student submissions for assignments';
 COMMENT ON TABLE test IS 'Question bank template for assessments';

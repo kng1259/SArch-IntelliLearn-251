@@ -1,30 +1,51 @@
-// Grading Service - Currently not implemented in backend
-// This will be a placeholder for future grading features
+// Grading Service - API for managing assignment submissions and grading
 
 import { api } from '../api';
 
-export interface Submission {
-  id: string;
+export interface PendingSubmission {
+  assignmentId: string;
+  assignmentName: string;
+  courseId: string;
+  courseName: string;
   studentId: string;
   studentName: string;
-  courseId: string;
   submittedAt: string;
-  status: 'pending' | 'graded';
+  content: string;
 }
 
-// Grading features are not yet implemented in the teaching service
-// These are placeholder methods for future implementation
+export interface Submission {
+  assignmentId: string;
+  assignmentName: string;
+  studentId: string;
+  studentName: string;
+  fileName: string;
+  content: string;
+  score: number;
+  feedback: string | null;
+  submittedAt: string;
+  graded: boolean;
+}
+
+export interface GradingRequest {
+  fileName: string;
+  score: number;
+  feedback: string;
+}
+
 const gradingService = {
-  // Placeholder - to be implemented
-  getPendingTasks: async (): Promise<Submission[]> => {
-    console.warn('Grading service not yet implemented in backend');
-    return [];
+  // Get all pending submissions that need grading
+  getPendingSubmissions: async (): Promise<PendingSubmission[]> => {
+    return api.get<PendingSubmission[]>('/submission/pending');
   },
 
-  // Placeholder - to be implemented
-  getSubmissions: async (courseId: string): Promise<Submission[]> => {
-    console.warn('Grading service not yet implemented in backend');
-    return [];
+  // Get all submissions for a specific assignment
+  getSubmissionsByAssignment: async (assignmentId: string): Promise<Submission[]> => {
+    return api.get<Submission[]>(`/submission/assignment/${assignmentId}`);
+  },
+
+  // Grade a submission
+  gradeSubmission: async (assignmentId: string, studentId: string, request: GradingRequest): Promise<void> => {
+    return api.patch<void>(`/submission/${assignmentId}/${studentId}`, request);
   },
 };
 

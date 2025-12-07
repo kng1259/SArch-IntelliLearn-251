@@ -18,4 +18,26 @@ public interface SubmissionRepository extends JpaRepository<Submission, Submissi
             nativeQuery = true)
     List<Submission> selectAllByCourseId(UUID courseId);
 
+    @Query(value = """
+    select s.*
+    from submission s
+    join assignment a on s.assignment_id = a.assignment_id
+    join course c on a.course_id = c.course_id
+    where c.tutor_id = :tutorId
+    and (s.score = 0 or s.score is null)
+    and s.feedback is null
+    order by s.created_at desc
+    """,
+            nativeQuery = true)
+    List<Submission> selectPendingSubmissionsByTutorId(UUID tutorId);
+
+    @Query(value = """
+    select s.*
+    from submission s
+    where s.assignment_id = :assignmentId
+    order by s.created_at desc
+    """,
+            nativeQuery = true)
+    List<Submission> selectAllByAssignmentId(UUID assignmentId);
+
 }

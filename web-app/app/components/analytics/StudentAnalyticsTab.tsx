@@ -1,16 +1,21 @@
 'use client';
 
-import { Line } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
+import { 
+  StudyTimeAnalysisResponse, 
+  AssignmentAnalysisResponse 
+} from '@/lib/services/analyticsService';
 
 // Register ChartJS components
 ChartJS.register(
@@ -18,12 +23,22 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
 );
 
-export default function StudentAnalyticsTab() {
+interface StudentAnalyticsTabProps {
+  studyTimeAnalysis?: StudyTimeAnalysisResponse;
+  assignmentAnalysis?: AssignmentAnalysisResponse[];
+}
+
+export default function StudentAnalyticsTab({ studyTimeAnalysis, assignmentAnalysis }: StudentAnalyticsTabProps) {
+  // Weekly study time data from API
+  const weeklyLabels = studyTimeAnalysis?.weeklyStats?.map(w => w.week) || ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+  const weeklyMinutes = studyTimeAnalysis?.weeklyStats?.map(w => w.totalMinutes || 0) || [288, 312, 300, 348];
+  const weeklyHours = weeklyMinutes.map(m => (m / 60).toFixed(1));
   // Student Engagement Data - Dual Y-axis
   const engagementData = {
     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -115,26 +130,26 @@ export default function StudentAnalyticsTab() {
     },
   };
 
-  // Top Performers Data
-  const topPerformers = [
-    { name: 'Sophie Chen', grade: '95%', color: 'bg-green-500' },
-    { name: 'Emily Davis', grade: '92%', color: 'bg-green-500' },
-    { name: 'Alex Johnson', grade: '88%', color: 'bg-green-500' },
-  ];
+  // Most Active Students from API - top 5 most studied
+  const mostActiveStudents = studyTimeAnalysis?.top5MostStudied?.map(student => ({
+    name: student.studentName,
+    hours: `${(student.totalMinutes / 60).toFixed(1)}h`,
+    color: 'bg-blue-100 text-blue-700'
+  })) || [];
 
-  // At-Risk Students Data
-  const atRiskStudents = [
-    { name: 'Marcus Williams', grade: '58%', color: 'bg-red-100 text-red-700' },
-    { name: 'John Doe', grade: '62%', color: 'bg-red-100 text-red-700' },
-    { name: 'Jane Smith', grade: '65%', color: 'bg-red-100 text-red-700' },
-  ];
+  // Least Active Students from API - top 5 least studied (at-risk)
+  const leastActiveStudents = studyTimeAnalysis?.top5LeastStudied?.map(student => ({
+    name: student.studentName,
+    hours: `${(student.totalMinutes / 60).toFixed(1)}h`,
+    color: 'bg-red-100 text-red-700'
+  })) || [];
 
-  // Most Active Students Data
-  const mostActiveStudents = [
-    { name: 'Sophie Chen', hours: '8.5h/week', color: 'bg-blue-100 text-blue-700' },
-    { name: 'Emily Davis', hours: '7.2h/week', color: 'bg-blue-100 text-blue-700' },
-    { name: 'Alex Johnson', hours: '6.8h/week', color: 'bg-blue-100 text-blue-700' },
-  ];
+  // Calculate assignment scores from assignmentAnalysis for top performers
+  const topPerformers = assignmentAnalysis?.slice(0, 3).map(assignment => ({
+    name: assignment.name,
+    grade: `${assignment.avgScore.toFixed(0)}%`,
+    color: 'bg-green-500'
+  })) || [];
 
   return (
     <div className="space-y-6">
@@ -151,39 +166,43 @@ export default function StudentAnalyticsTab() {
 
       {/* Student Lists */}
       <div className="grid grid-cols-3 gap-6">
-        {/* Top Performers */}
+        {/* Top Performers - Best assignment scores */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="mb-4">
-            <h3 className="text-base font-semibold text-gray-900">Top Performers</h3>
-            <p className="text-sm text-gray-600">Students with highest grades</p>
+            <h3 className="text-base font-semibold text-gray-900">Top Assignments</h3>
+            <p className="text-sm text-gray-600">Assignments with highest avg scores</p>
           </div>
           <div className="space-y-4">
-            {topPerformers.map((student, index) => (
+            {topPerformers.length > 0 ? topPerformers.map((item, index) => (
               <div key={index} className="flex items-center justify-between">
-                <span className="text-sm text-gray-900">{student.name}</span>
-                <span className={`px-3 py-1 ${student.color} text-white text-sm font-medium rounded`}>
-                  {student.grade}
+                <span className="text-sm text-gray-900 truncate flex-1 mr-2">{item.name}</span>
+                <span className={`px-3 py-1 ${item.color} text-white text-sm font-medium rounded`}>
+                  {item.grade}
                 </span>
               </div>
-            ))}
+            )) : (
+              <p className="text-sm text-gray-500 text-center py-4">No data available</p>
+            )}
           </div>
         </div>
 
-        {/* At-Risk Students */}
+        {/* Least Active Students */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="mb-4">
-            <h3 className="text-base font-semibold text-gray-900">At-Risk Students</h3>
-            <p className="text-sm text-gray-600">Students needing attention</p>
+            <h3 className="text-base font-semibold text-gray-900">Least Active Students</h3>
+            <p className="text-sm text-gray-600">Students with low study time</p>
           </div>
           <div className="space-y-4">
-            {atRiskStudents.map((student, index) => (
+            {leastActiveStudents.length > 0 ? leastActiveStudents.map((student, index) => (
               <div key={index} className="flex items-center justify-between">
-                <span className="text-sm text-gray-900">{student.name}</span>
+                <span className="text-sm text-gray-900 truncate flex-1 mr-2">{student.name}</span>
                 <span className={`px-3 py-1 ${student.color} text-sm font-medium rounded`}>
-                  {student.grade}
+                  {student.hours}
                 </span>
               </div>
-            ))}
+            )) : (
+              <p className="text-sm text-gray-500 text-center py-4">No data available</p>
+            )}
           </div>
         </div>
 
@@ -194,14 +213,16 @@ export default function StudentAnalyticsTab() {
             <p className="text-sm text-gray-600">Most engaged students</p>
           </div>
           <div className="space-y-4">
-            {mostActiveStudents.map((student, index) => (
+            {mostActiveStudents.length > 0 ? mostActiveStudents.map((student, index) => (
               <div key={index} className="flex items-center justify-between">
-                <span className="text-sm text-gray-900">{student.name}</span>
+                <span className="text-sm text-gray-900 truncate flex-1 mr-2">{student.name}</span>
                 <span className={`px-3 py-1 ${student.color} text-sm font-medium rounded`}>
                   {student.hours}
                 </span>
               </div>
-            ))}
+            )) : (
+              <p className="text-sm text-gray-500 text-center py-4">No data available</p>
+            )}
           </div>
         </div>
       </div>

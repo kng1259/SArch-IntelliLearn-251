@@ -41,6 +41,16 @@ public class TeachingAssistantController {
                 .build();
     }
 
+    @GetMapping("/course/{courseId}")
+    public ApiResponse<CourseResponse> getCourse(@PathVariable UUID courseId){
+        var course = teachingAssistantService.retrieveCourse(courseId);
+        return ApiResponse.<CourseResponse>builder()
+                .data(course)
+                .message("Lấy thông tin khóa học thành công")
+                .success(true)
+                .build();
+    }
+
     @PreAuthorize("hasAnyRole('TUTOR')")
     @PutMapping("/course/{courseId}")
     public ApiResponse<CourseResponse> updateCourse(@AuthenticationPrincipal KeycloakPrincipal principal,@PathVariable UUID courseId, @Valid @RequestBody CourseRequest courseRequest){
@@ -85,6 +95,16 @@ public class TeachingAssistantController {
                 .build();
     }
 
+    @GetMapping("/learning-material/course/{courseId}")
+    public ApiResponse<List<LearningMaterialResponse>> getMaterialsByCourse(@PathVariable UUID courseId){
+        var materials = teachingAssistantService.retrieveMaterialsByCourse(courseId);
+        return ApiResponse.<List<LearningMaterialResponse>>builder()
+                .data(materials)
+                .message("Lấy danh sách tài liệu thành công")
+                .success(true)
+                .build();
+    }
+
     @PreAuthorize("hasAnyRole('TUTOR')")
     @DeleteMapping("/learning-material/{materialId}")
     public ApiResponse<?> deleteLearningMaterial(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID materialId){
@@ -92,6 +112,60 @@ public class TeachingAssistantController {
         return ApiResponse.builder()
                 .success(true)
                 .message("Xóa tài liệu thành công")
+                .build();
+    }
+
+    // ============ Module Endpoints ============
+
+    @PreAuthorize("hasAnyRole('TUTOR')")
+    @PostMapping("/module")
+    public ApiResponse<ModuleResponse> postModule(@AuthenticationPrincipal KeycloakPrincipal principal, @Valid @RequestBody ModuleRequest moduleRequest){
+        var module = teachingAssistantService.createModule(principal.userId(), moduleRequest);
+        return ApiResponse.<ModuleResponse>builder()
+                .data(module)
+                .success(true)
+                .message("Tạo module thành công")
+                .build();
+    }
+
+    @GetMapping("/module/{moduleId}")
+    public ApiResponse<ModuleResponse> getModule(@PathVariable UUID moduleId){
+        var module = teachingAssistantService.retrieveModule(moduleId);
+        return ApiResponse.<ModuleResponse>builder()
+                .data(module)
+                .message("Lấy thông tin module thành công")
+                .success(true)
+                .build();
+    }
+
+    @GetMapping("/module/course/{courseId}")
+    public ApiResponse<List<ModuleResponse>> getModulesByCourse(@PathVariable UUID courseId){
+        var modules = teachingAssistantService.retrieveModulesByCourse(courseId);
+        return ApiResponse.<List<ModuleResponse>>builder()
+                .data(modules)
+                .message("Lấy danh sách module thành công")
+                .success(true)
+                .build();
+    }
+
+    @PreAuthorize("hasAnyRole('TUTOR')")
+    @PutMapping("/module/{moduleId}")
+    public ApiResponse<ModuleResponse> updateModule(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID moduleId, @Valid @RequestBody ModuleRequest moduleRequest){
+        var module = teachingAssistantService.updateModule(principal.userId(), moduleId, moduleRequest);
+        return ApiResponse.<ModuleResponse>builder()
+                .data(module)
+                .success(true)
+                .message("Cập nhật module thành công")
+                .build();
+    }
+
+    @PreAuthorize("hasAnyRole('TUTOR')")
+    @DeleteMapping("/module/{moduleId}")
+    public ApiResponse<?> deleteModule(@AuthenticationPrincipal KeycloakPrincipal principal, @PathVariable UUID moduleId){
+        teachingAssistantService.deleteModule(principal.userId(), moduleId);
+        return ApiResponse.builder()
+                .success(true)
+                .message("Xóa module thành công")
                 .build();
     }
 }

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useApi } from '@/lib/hooks/useApi';
 import courseService, { Course, CourseRequest } from '@/lib/services/courseService';
+import gradingService, { PendingSubmission } from '@/lib/services/gradingService';
+import authService from '@/lib/services/authService';
 import Header from '@/app/components/Header';
 import DashboardCard from '@/app/components/DashboardCard';
 import CourseCard from '@/app/components/CourseCard';
@@ -14,26 +16,54 @@ export default function TutorDashboard() {
   const toast = useToast();
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
   const { data: courses, loading, error, execute } = useApi<Course[]>();
+  const [pendingSubmissions, setPendingSubmissions] = useState<PendingSubmission[]>([]);
+  const [loadingPending, setLoadingPending] = useState(false);
   
   // Get tutor ID from localStorage or auth context
   // For now, using a placeholder - replace with actual auth
   const [tutorId, setTutorId] = useState<string>('');
-  const tutorName = "Dr. Sarah Mitchell";
+  const [tutorName, setTutorName] = useState<string>('');
   
-  // Fetch courses on component mount
+  // Fetch courses and pending submissions on component mount
   useEffect(() => {
     const storedTutorId = localStorage.getItem('tutorId');
     if (storedTutorId) {
       setTutorId(storedTutorId);
       execute(() => courseService.getCoursesByTutor(storedTutorId));
     }
+    
+    // Fetch user info for tutor name
+    const fetchUserInfo = async () => {
+      try {
+        const userInfo = await authService.getUserInfo();
+        setTutorName(userInfo.name || `${userInfo.given_name || ''} ${userInfo.family_name || ''}`.trim() || 'Tutor');
+      } catch (err) {
+        console.error('Failed to fetch user info:', err);
+        setTutorName('Tutor');
+      }
+    };
+    fetchUserInfo();
+    
+    // Fetch pending submissions
+    const fetchPendingSubmissions = async () => {
+      setLoadingPending(true);
+      try {
+        const submissions = await gradingService.getPendingSubmissions();
+        setPendingSubmissions(submissions);
+      } catch (err) {
+        console.error('Failed to fetch pending submissions:', err);
+      } finally {
+        setLoadingPending(false);
+      }
+    };
+    fetchPendingSubmissions();
   }, []);
   
   // Calculate dashboard stats from actual data
   const dashboardStats = {
     activeCourses: courses?.length || 0,
     totalStudents: 0, // TODO: Sum students from all courses
-    pendingGrading: 0, // TODO: Get from grading service when implemented
+    pendingGrading: pendingSubmissions.length,
   };
 
   // Transform API courses to CourseCard format
@@ -41,19 +71,18 @@ export default function TutorDashboard() {
     id: course.id,
     title: course.name,
     description: course.description,
-    image: '/placeholder-course-1.jpg', // TODO: Add image support to backend
+    image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800', // Placeholder image
     students: 0, // TODO: Get from course students endpoint
     rating: 0, // TODO: Add rating support
   })) || [];
 
-  const pendingActions = [
-    // TODO: Get from grading service when implemented
-    // Create mock data for now
-    { id: '1', studentName: 'John Doe', action: 'Submit Assignment 1 for Math 101', submittedDate: '2024-08-10' },
-    { id: '2', studentName: 'Jane Smith', action: 'Submit Quiz 2 for Physics 201', submittedDate: '2024-08-11' },
-    { id: '3', studentName: 'Alice Johnson', action: 'Submit Project Proposal for CS 301', submittedDate: '2024-08-12' },
-    
-  ];
+  // Transform pending submissions to pendingActions format
+  const pendingActions = pendingSubmissions.map(submission => ({
+    id: `${submission.assignmentId}-${submission.studentId}`,
+    studentName: submission.studentName,
+    action: `Submit ${submission.assignmentName} for ${submission.courseName}`,
+    submittedDate: submission.submittedAt?.split('T')[0] || '',
+  }));
 
   // Handle create course
   const handleCreateCourse = async (data: { title: string; description: string; category: string; startDate: string; endDate: string }) => {
@@ -208,17 +237,36 @@ export default function TutorDashboard() {
             Items that need your attention
           </p>
           
-          <div className="space-y-2">
-            {pendingActions.map((action) => (
-              <PendingActionCard
-                key={action.id}
-                id={action.id}
-                studentName={action.studentName}
-                action={action.action}
-                submittedDate={action.submittedDate}
-              />
-            ))}
-          </div>
+          {loadingPending && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+              <span className="ml-2 text-gray-600">Loading...</span>
+            </div>
+          )}
+          
+          {!loadingPending && pendingActions.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="font-medium">No pending submissions</p>
+              <p className="text-sm">All submissions have been graded</p>
+            </div>
+          )}
+          
+          {!loadingPending && pendingActions.length > 0 && (
+            <div className="space-y-2">
+              {pendingActions.map((action) => (
+                <PendingActionCard
+                  key={action.id}
+                  id={action.id}
+                  studentName={action.studentName}
+                  action={action.action}
+                  submittedDate={action.submittedDate}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </main>
 

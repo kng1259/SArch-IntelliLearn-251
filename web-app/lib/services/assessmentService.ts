@@ -142,6 +142,13 @@ export interface AssignmentResponse {
   gradingGuidelines?: string; // URL to file
 }
 
+// ============ Grading Types ============
+export interface GradingRequest {
+  score: number; // 0-100
+  feedback: string;
+  fileName?: string;
+}
+
 const assessmentService = {
   // ============ Exam APIs ============
 
@@ -292,6 +299,18 @@ const assessmentService = {
     courseId: string
   ): Promise<AssignmentResponse[]> => {
     return api.get<AssignmentResponse[]>(`/assignment/course/${courseId}`);
+  },
+
+  // ============ Grading APIs ============
+  
+  // Grade assignment submission
+  // PATCH /submission/{assignmentId}/{studentId}
+  gradeSubmission: async (
+    assignmentId: string,
+    studentId: string,
+    gradingData: GradingRequest
+  ): Promise<void> => {
+    await api.patch<void>(`/submission/${assignmentId}/${studentId}`, gradingData);
   },
 
   attempQuiz: async (quizId: string): Promise<StudentTest> => {

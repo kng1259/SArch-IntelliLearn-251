@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Material;
 import vn.edu.hcmut.intellilearn.teachingservice.core.repository.MaterialRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -25,5 +26,10 @@ public class TeachingAssistantMaterialRepositoryImpl implements  TeachingAssista
     @Override
     public Material getLearningMaterial(UUID materialId) {
         return materialRepository.findById(materialId).orElse(null);
+    }
+
+    @Override
+    public List<Material> getMaterialsByCourse(UUID courseId) {
+        return materialRepository.findAllByCourse_CourseId(courseId);
     }
 }

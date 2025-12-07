@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Course;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Feedback;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Material;
+import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Module;
 import vn.edu.hcmut.intellilearn.teachingservice.core.entity.Student;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.minio.MinioService;
 import vn.edu.hcmut.intellilearn.teachingservice.domain.teachingassistant.datatype.*;
@@ -26,6 +27,7 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
     private final TeachingAssistantEnrollmentRepository enrollmentRepository;
     private final TeachingAssistantStudentRepository studentRepository;
     private final TeachingAssistantMaterialRepository materialRepository;
+    private final TeachingAssistantModuleRepository moduleRepository;
 
     private final MinioService minioService;
 
@@ -46,6 +48,15 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
     public List<CourseResponse> retrieveTutorCourses(UUID tutorId) {
         var courseList = courseRepository.selectTutorCourses(tutorId);
         return courseList.stream().map(courseMapper::toCourseResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public CourseResponse retrieveCourse(UUID courseId) {
+        Course course = courseRepository.getCourse(courseId);
+        if (course == null) {
+            throw new IllegalArgumentException("Không tìm thấy khóa học");
+        }
+        return courseMapper.toCourseResponse(course);
     }
 
     @Override
@@ -88,9 +99,93 @@ public class TeachingAssistantServiceImpl implements TeachingAssistantService {
     }
 
     @Override
+    public List<LearningMaterialResponse> retrieveMaterialsByCourse(UUID courseId) {
+        List<Material> materials = materialRepository.getMaterialsByCourse(courseId);
+        return materials.stream()
+                .map(materialMapper::toLearningMaterialResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void deleteLearningMaterial(UUID tutorId, UUID materialId) {
         Material existedMaterial = materialRepository.getLearningMaterial(materialId);
-        Course existedCourse = courseValidator.getCourseIfOwned(tutorId, existedMaterial.getCourse().getCourseId());
+        courseValidator.getCourseIfOwned(tutorId, existedMaterial.getCourse().getCourseId());
         materialRepository.deleteLearningMaterial(materialId);
+    }
+
+    // Module methods
+    @Override
+    public ModuleResponse createModule(UUID tutorId, ModuleRequest moduleRequest) {
+        Course existedCourse = courseValidator.getCourseIfOwned(tutorId, UUID.fromString(moduleRequest.getCourseId()));
+        
+        Module module = Module.builder()
+                .name(moduleRequest.getName())
+                .description(moduleRequest.getDescription())
+                .order(moduleRequest.getOrder() != null ? moduleRequest.getOrder() : moduleRepository.countModulesByCourse(existedCourse.getCourseId()))
+                .course(existedCourse)
+                .build();
+        
+        Module savedModule = moduleRepository.insertModule(module);
+        return toModuleResponse(savedModule);
+    }
+
+    @Override
+    public ModuleResponse updateModule(UUID tutorId, UUID moduleId, ModuleRequest moduleRequest) {
+        Module existedModule = moduleRepository.getModule(moduleId);
+        if (existedModule == null) {
+            throw new IllegalArgumentException("Không tìm thấy module");
+        }
+        courseValidator.getCourseIfOwned(tutorId, existedModule.getCourse().getCourseId());
+        
+        if (moduleRequest.getName() != null) {
+            existedModule.setName(moduleRequest.getName());
+        }
+        if (moduleRequest.getDescription() != null) {
+            existedModule.setDescription(moduleRequest.getDescription());
+        }
+        if (moduleRequest.getOrder() != null) {
+            existedModule.setOrder(moduleRequest.getOrder());
+        }
+        
+        moduleRepository.updateModule(existedModule);
+        return toModuleResponse(existedModule);
+    }
+
+    @Override
+    public void deleteModule(UUID tutorId, UUID moduleId) {
+        Module existedModule = moduleRepository.getModule(moduleId);
+        if (existedModule == null) {
+            throw new IllegalArgumentException("Không tìm thấy module");
+        }
+        courseValidator.getCourseIfOwned(tutorId, existedModule.getCourse().getCourseId());
+        moduleRepository.deleteModule(moduleId);
+    }
+
+    @Override
+    public List<ModuleResponse> retrieveModulesByCourse(UUID courseId) {
+        List<Module> modules = moduleRepository.getModulesByCourse(courseId);
+        return modules.stream()
+                .map(this::toModuleResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public ModuleResponse retrieveModule(UUID moduleId) {
+        Module module = moduleRepository.getModule(moduleId);
+        if (module == null) {
+            throw new IllegalArgumentException("Không tìm thấy module");
+        }
+        return toModuleResponse(module);
+    }
+
+    private ModuleResponse toModuleResponse(Module module) {
+        return ModuleResponse.builder()
+                .id(module.getId().toString())
+                .name(module.getName())
+                .description(module.getDescription())
+                .order(module.getOrder())
+                .createdAt(module.getCreatedAt())
+                .courseId(module.getCourse().getCourseId().toString())
+                .build();
     }
 }

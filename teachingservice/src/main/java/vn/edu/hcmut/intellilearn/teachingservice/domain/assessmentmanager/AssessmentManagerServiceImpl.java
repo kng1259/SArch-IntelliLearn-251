@@ -299,4 +299,40 @@ class AssessmentManagerServiceImpl implements AssessmentManagerService {
         oldSubmission.setFeedback(gradingRequest.getFeedback());
         submissionRepository.gradingSubmission(oldSubmission);
     }
+
+    @Override
+    public List<PendingSubmissionResponse> retrievePendingSubmissions(UUID tutorId) {
+        List<Submission> submissions = submissionRepository.selectPendingSubmissionsByTutorId(tutorId);
+        return submissions.stream().map(s -> PendingSubmissionResponse.builder()
+                .assignmentId(s.getAssignment().getId())
+                .assignmentName(s.getAssignment().getName())
+                .courseId(s.getAssignment().getCourse().getCourseId())
+                .courseName(s.getAssignment().getCourse().getName())
+                .studentId(s.getId().getStudentId())
+                .studentName("Student " + s.getId().getStudentId().toString().substring(0, 8)) // TODO: Get from user service
+                .submittedAt(s.getCreatedAt())
+                .content(s.getContent())
+                .build()
+        ).toList();
+    }
+
+    @Override
+    public List<SubmissionResponse> retrieveSubmissionsByAssignment(UUID tutorId, UUID assignmentId) {
+        assignmentValidator.validateAssignmentOwnership(tutorId, assignmentId);
+        Assignment assignment = assignmentRepository.selectAssignment(assignmentId);
+        List<Submission> submissions = submissionRepository.selectSubmissionsByAssignmentId(assignmentId);
+        return submissions.stream().map(s -> SubmissionResponse.builder()
+                .assignmentId(s.getAssignment().getId())
+                .assignmentName(assignment.getName())
+                .studentId(s.getId().getStudentId())
+                .studentName("Student " + s.getId().getStudentId().toString().substring(0, 8)) // TODO: Get from user service
+                .fileName(s.getId().getFileName())
+                .content(s.getContent())
+                .score(s.getScore())
+                .feedback(s.getFeedback())
+                .submittedAt(s.getCreatedAt())
+                .graded(s.getFeedback() != null && s.getScore() != null && s.getScore() > 0)
+                .build()
+        ).toList();
+    }
 }

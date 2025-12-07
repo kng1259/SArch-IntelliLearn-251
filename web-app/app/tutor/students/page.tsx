@@ -1,26 +1,70 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApi } from '@/lib/hooks/useApi';
 import courseService, { Course, Student, FeedbackRequest } from '@/lib/services/courseService';
 import TutorHeader from '@/app/components/TutorHeader';
 import ProvideFeedbackModal from '@/app/components/modals/ProvideFeedbackModal';
 import { useToast } from '@/app/components/Toast';
 
-interface StudentWithCourse extends Student {
-  courseName: string;
+interface CourseInfo {
   courseId: string;
+  courseName: string;
+}
+
+interface UniqueStudent extends Student {
+  courses: CourseInfo[];
+}
+
+interface DropdownPosition {
+  top: number;
+  right: number;
 }
 
 export default function StudentManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<StudentWithCourse | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<UniqueStudent | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const { data: courses, loading: coursesLoading, execute: fetchCourses } = useApi<Course[]>();
-  const [allStudents, setAllStudents] = useState<StudentWithCourse[]>([]);
+  const [uniqueStudents, setUniqueStudents] = useState<UniqueStudent[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   
+  // Dropdown state for course selection
+  const [dropdownStudent, setDropdownStudent] = useState<UniqueStudent | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
   const tutorId = typeof window !== 'undefined' ? localStorage.getItem('tutorId') : null;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownStudent(null);
+        setDropdownPosition(null);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleOpenDropdown = (student: UniqueStudent, event: React.MouseEvent) => {
+    const button = event.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+    setDropdownStudent(student);
+    setDropdownPosition({
+      top: rect.bottom + 4,
+      right: window.innerWidth - rect.right,
+    });
+  };
+
+  const handleSelectCourse = (student: UniqueStudent, courseId: string) => {
+    setDropdownStudent(null);
+    setDropdownPosition(null);
+    handleProvideFeedback(student, courseId);
+  };
 
   // Fetch courses on mount
   useEffect(() => {
@@ -47,7 +91,34 @@ export default function StudentManagement() {
         
         const studentsArrays = await Promise.all(studentsPromises);
         const flattenedStudents = studentsArrays.flat();
-        setAllStudents(flattenedStudents);
+        
+        // Group students by ID to consolidate duplicates
+        const studentMap = new Map<string, UniqueStudent>();
+        flattenedStudents.forEach(student => {
+          const existing = studentMap.get(student.id);
+          if (existing) {
+            // Add course to existing student if not already present
+            const courseExists = existing.courses.some(c => c.courseId === student.courseId);
+            if (!courseExists) {
+              existing.courses.push({
+                courseId: student.courseId,
+                courseName: student.courseName,
+              });
+            }
+          } else {
+            // Create new unique student entry
+            studentMap.set(student.id, {
+              id: student.id,
+              fullName: student.fullName,
+              courses: [{
+                courseId: student.courseId,
+                courseName: student.courseName,
+              }],
+            });
+          }
+        });
+        
+        setUniqueStudents(Array.from(studentMap.values()));
       } catch (error) {
         console.error('Error fetching students:', error);
       } finally {
@@ -58,20 +129,21 @@ export default function StudentManagement() {
     fetchAllStudents();
   }, [courses]);
 
-  const handleProvideFeedback = (student: StudentWithCourse) => {
+  const handleProvideFeedback = (student: UniqueStudent, courseId: string) => {
     setSelectedStudent(student);
+    setSelectedCourseId(courseId);
     setFeedbackModalOpen(true);
   };
 
   const toast = useToast();
 
   const handleSaveFeedback = async (feedback: string) => {
-    if (!selectedStudent) return;
+    if (!selectedStudent || !selectedCourseId) return;
     
     try {
       const feedbackRequest: FeedbackRequest = {
         studentId: selectedStudent.id,
-        courseId: selectedStudent.courseId,
+        courseId: selectedCourseId,
         content: feedback,
       };
       
@@ -84,12 +156,12 @@ export default function StudentManagement() {
     }
   };
 
-  const filteredStudents = allStudents.filter(student =>
+  const filteredStudents = uniqueStudents.filter(student =>
     student.fullName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const loading = coursesLoading || loadingStudents;
-  const totalStudents = allStudents.length;
+  const totalStudents = uniqueStudents.length;
   const activeCourses = courses?.length || 0;
 
   // Get initials for avatar
@@ -159,7 +231,7 @@ export default function StudentManagement() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-visible">
             {loading && (
               <div className="text-center py-12 text-gray-600">
                 Loading students...
@@ -181,14 +253,14 @@ export default function StudentManagement() {
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Student</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Course</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Enrolled Courses</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Student ID</th>
                     <th className="text-left px-6 py-3 text-sm font-medium text-gray-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredStudents.map((student) => (
-                    <tr key={`${student.id}-${student.courseId}`} className="hover:bg-gray-50">
+                    <tr key={student.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-semibold text-indigo-600">
@@ -196,27 +268,48 @@ export default function StudentManagement() {
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-900">{student.fullName}</p>
-                            <p className="text-sm text-gray-500">ID: {student.id.slice(0, 8)}...</p>
+                            <p className="text-xs text-gray-500">{student.courses.length} course{student.courses.length > 1 ? 's' : ''}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm text-blue-600">{student.courseName}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {student.courses.map((course) => (
+                            <span 
+                              key={course.courseId}
+                              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100"
+                            >
+                              {course.courseName}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm text-gray-600 font-mono">{student.id}</p>
+                        <p className="text-sm text-gray-600 font-mono">{student.id.slice(0, 8)}...</p>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleProvideFeedback(student)}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors" 
-                            title="Provide Feedback"
-                          >
-                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                          </button>
+                          {student.courses.length === 1 ? (
+                            <button 
+                              onClick={() => handleProvideFeedback(student, student.courses[0].courseId)}
+                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors" 
+                              title="Provide Feedback"
+                            >
+                              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={(e) => handleOpenDropdown(student, e)}
+                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors" 
+                              title="Provide Feedback"
+                            >
+                              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -228,15 +321,39 @@ export default function StudentManagement() {
         </div>
       </main>
 
+      {/* Course Selection Dropdown - Fixed position outside table */}
+      {dropdownStudent && dropdownPosition && (
+        <div
+          ref={dropdownRef}
+          className="fixed w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1"
+          style={{
+            top: dropdownPosition.top,
+            right: dropdownPosition.right,
+            zIndex: 9999,
+          }}
+        >
+          <p className="px-3 py-1.5 text-xs text-gray-500 font-medium">Select course:</p>
+          {dropdownStudent.courses.map((course) => (
+            <button
+              key={course.courseId}
+              onClick={() => handleSelectCourse(dropdownStudent, course.courseId)}
+              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              {course.courseName}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Feedback Modal */}
-      {selectedStudent && (
+      {selectedStudent && selectedCourseId && (
         <ProvideFeedbackModal
           isOpen={feedbackModalOpen}
           onClose={() => setFeedbackModalOpen(false)}
           student={{
             name: selectedStudent.fullName,
             avatar: getInitials(selectedStudent.fullName),
-            course: selectedStudent.courseName,
+            course: selectedStudent.courses.find(c => c.courseId === selectedCourseId)?.courseName || '',
             progress: 0,
             avgGrade: 0,
           }}

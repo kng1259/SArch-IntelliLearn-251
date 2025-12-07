@@ -1,90 +1,61 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import BaseModal from './BaseModal';
-import { FormInput, FormSelect } from '../FormComponents';
+import { FormInput } from '../FormComponents';
 
-interface AddMaterialModalProps {
+interface EditMaterialModalProps {
   isOpen: boolean;
   onClose: () => void;
-  modules: { id: string; title: string }[];
-  onAdd: (data: { title: string; type: string; moduleId: string; file: File | null }) => void | Promise<void>;
+  material: {
+    id: string;
+    name: string;
+    content?: string;
+  } | null;
+  onSave: (data: { 
+    name: string; 
+    content: string;
+    file?: File | null;
+  }) => void | Promise<void>;
 }
 
-export default function AddMaterialModal({
+export default function EditMaterialModal({
   isOpen,
   onClose,
-  modules,
-  onAdd,
-}: AddMaterialModalProps) {
-  const [title, setTitle] = useState('');
-  const [type, setType] = useState('document');
-  const [moduleId, setModuleId] = useState('');
+  material,
+  onSave,
+}: EditMaterialModalProps) {
+  const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const typeOptions = [
-    { value: 'video', label: 'Video' },
-    { value: 'document', label: 'Document' },
-    { value: 'slides', label: 'Slides' },
-    { value: 'article', label: 'Article' },
-    { value: 'audio', label: 'Audio' },
-    { value: 'other', label: 'Other' },
-  ];
-
-  const moduleOptions = [
-    { value: '', label: '-- Select Module (optional) --' },
-    ...modules.map((m) => ({ value: m.id, label: m.title })),
-  ];
+  // Populate form when material changes
+  useEffect(() => {
+    if (material) {
+      setName(material.name || '');
+      setFile(null);
+    }
+  }, [material]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;
     setFile(selectedFile);
-    // Auto-fill title from filename if empty
-    if (selectedFile && !title) {
-      const fileName = selectedFile.name.replace(/\.[^/.]+$/, ''); // Remove extension
-      setTitle(fileName);
-    }
-    // Auto-detect type from file extension
-    if (selectedFile) {
-      const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
-      if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) {
-        setType('video');
-      } else if (['pdf', 'doc', 'docx', 'txt'].includes(ext)) {
-        setType('document');
-      } else if (['ppt', 'pptx'].includes(ext)) {
-        setType('slides');
-      } else if (['mp3', 'wav', 'ogg', 'flac'].includes(ext)) {
-        setType('audio');
-      }
-    }
   };
 
   const handleSubmit = async () => {
-    if (!title.trim()) {
+    if (!name.trim()) {
       return;
     }
     setIsSubmitting(true);
     try {
-      await onAdd({ title, type, moduleId, file });
-      // Reset form
-      setTitle('');
-      setType('document');
-      setModuleId('');
-      setFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      await onSave({ name, content: material?.content || '', file });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    setTitle('');
-    setType('document');
-    setModuleId('');
     setFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -96,42 +67,34 @@ export default function AddMaterialModal({
     <BaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Add Learning Material"
-      subtitle="Upload new course content"
+      title="Edit Material"
+      subtitle="Update learning material details"
       onSubmit={handleSubmit}
-      submitText={isSubmitting ? "Uploading..." : "Add Material"}
+      submitText={isSubmitting ? "Saving..." : "Save Changes"}
     >
       <FormInput
         label="Material Title"
         id="materialTitle"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
         placeholder="e.g., Introduction to HTML"
         required
       />
-
-      <div className="grid grid-cols-2 gap-4">
-        <FormSelect
-          label="Type"
-          id="type"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          options={typeOptions}
-        />
-        
-        <FormSelect
-          label="Module"
-          id="module"
-          value={moduleId}
-          onChange={(e) => setModuleId(e.target.value)}
-          options={moduleOptions}
-        />
-      </div>
       
+      {/* Current file info */}
+      {material?.content && (
+        <div className="text-sm text-gray-600">
+          <span className="font-medium">Current file: </span>
+          <a href={material.content} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            View current file
+          </a>
+        </div>
+      )}
+
       {/* File Upload */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          File <span className="text-red-500">*</span>
+          Replace File (optional)
         </label>
         <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
           <div className="space-y-1 text-center">
@@ -150,13 +113,13 @@ export default function AddMaterialModal({
             </svg>
             <div className="flex text-sm text-gray-600">
               <label
-                htmlFor="file-upload"
-                className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                htmlFor="edit-file-upload"
+                className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"
               >
-                <span>Upload a file</span>
+                <span>Upload a new file</span>
                 <input
-                  id="file-upload"
-                  name="file-upload"
+                  id="edit-file-upload"
+                  name="edit-file-upload"
                   type="file"
                   className="sr-only"
                   ref={fileInputRef}
@@ -164,11 +127,7 @@ export default function AddMaterialModal({
                   accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.mp4,.mov,.avi,.mp3,.wav,.jpg,.jpeg,.png,.gif,.zip,.rar"
                 />
               </label>
-              <p className="pl-1">or drag and drop</p>
             </div>
-            <p className="text-xs text-gray-500">
-              PDF, DOC, PPT, XLS, Video, Audio, Images up to 50MB
-            </p>
           </div>
         </div>
         {file && (

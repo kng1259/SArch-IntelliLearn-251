@@ -1,66 +1,183 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import TutorHeader from '@/app/components/TutorHeader';
 import { useToast } from '@/app/components/Toast';
+import assessmentService, { AssignmentResponse, GradingRequest } from '@/lib/services/assessmentService';
+import gradingService, { Submission as ApiSubmission } from '@/lib/services/gradingService';
+
+interface Submission {
+  id: string;
+  studentId: string;
+  studentName: string;
+  submittedDate: string;
+  fileName?: string;
+  content?: string;
+  grade?: number;
+  feedback?: string;
+  status: 'Pending' | 'Graded';
+}
 
 export default function AssignmentGrading() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
+  const assignmentId = params.id as string;
+  
   const [activeTab, setActiveTab] = useState<'pending' | 'graded'>('pending');
-  const [selectedStudent, setSelectedStudent] = useState<string | null>('1');
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [grade, setGrade] = useState('');
   const [feedback, setFeedback] = useState('');
-
-  // Mock data - replace with actual data from API
-  const assignmentInfo = {
-    title: 'Build a Personal Portfolio Page',
-    submittedOn: '11/15/2025',
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Assignment info state
+  const [assignmentInfo, setAssignmentInfo] = useState({
+    title: '',
+    description: '',
     maxScore: 100,
+    startAt: '',
+    endAt: '',
+  });
+
+  // Submissions state - fetched from API
+  const [pendingSubmissions, setPendingSubmissions] = useState<Submission[]>([]);
+  const [gradedSubmissions, setGradedSubmissions] = useState<Submission[]>([]);
+
+  // Helper function to format date
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+    } catch {
+      return dateString;
+    }
   };
 
-  const pendingSubmissions = [
-    {
-      id: '1',
-      studentName: 'Marcus Williams',
-      submittedDate: '11/15/2025',
-      status: 'Pending',
-    },
-  ];
+  // Fetch assignment details and submissions
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch assignment info
+        const assignmentData = await assessmentService.getAssignment(assignmentId);
+        setAssignmentInfo({
+          title: assignmentData.name,
+          description: assignmentData.description,
+          maxScore: 100,
+          startAt: assignmentData.startAt || '',
+          endAt: assignmentData.endAt || '',
+        });
+        
+        // Fetch submissions for this assignment
+        const submissionsData = await gradingService.getSubmissionsByAssignment(assignmentId);
+        
+        // Map API response to component format and separate pending/graded
+        const pending: Submission[] = [];
+        const graded: Submission[] = [];
+        
+        submissionsData.forEach((s: ApiSubmission) => {
+          const submission: Submission = {
+            id: `${s.studentId}-${s.fileName}`,
+            studentId: s.studentId,
+            studentName: s.studentName,
+            submittedDate: formatDate(s.submittedAt),
+            fileName: s.fileName,
+            content: s.content,
+            grade: s.score,
+            feedback: s.feedback || undefined,
+            status: s.graded ? 'Graded' : 'Pending',
+          };
+          
+          if (s.graded) {
+            graded.push(submission);
+          } else {
+            pending.push(submission);
+          }
+        });
+        
+        setPendingSubmissions(pending);
+        setGradedSubmissions(graded);
+        
+        // Select first pending submission by default
+        if (pending.length > 0) {
+          setSelectedSubmission(pending[0]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        toast.error('Không thể tải thông tin assignment');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const gradedSubmissions = [
-    {
-      id: '2',
-      studentName: 'Sophie Chen',
-      submittedDate: '11/10/2025',
-      grade: 95,
-      status: 'Graded',
-    },
-    {
-      id: '3',
-      studentName: 'Emily Davis',
-      submittedDate: '11/12/2025',
-      grade: 88,
-      status: 'Graded',
-    },
-  ];
+    fetchData();
+  }, [assignmentId]);
 
-  const currentSubmission = {
-    studentName: 'Marcus Williams',
-    fileName: 'portfolio.html',
-    description: 'This is a mock submission. In a real application, you would see the actual student work here, either as embedded content or downloadable files.',
-    details: "Student's portfolio includes: Professional header, About section, Skills showcase, Project gallery, and Contact form. Clean HTML structure with semantic tags.",
-  };
+  const handleSubmitGrade = async () => {
+    if (!selectedSubmission) {
+      toast.warning('Vui lòng chọn bài nộp để chấm điểm');
+      return;
+    }
+    
+    if (!grade) {
+      toast.warning('Vui lòng nhập điểm');
+      return;
+    }
+    
+    if (!feedback.trim()) {
+      toast.warning('Vui lòng nhập feedback');
+      return;
+    }
 
-  const toast = useToast();
+    const gradeNum = parseFloat(grade);
+    if (isNaN(gradeNum) || gradeNum < 0 || gradeNum > 100) {
+      toast.warning('Điểm phải từ 0 đến 100');
+      return;
+    }
 
-  const handleSubmitGrade = () => {
-    console.log('Submitting grade:', { grade, feedback });
-    // Handle grade submission
-    toast.success('Grade submitted successfully!');
-    setGrade('');
-    setFeedback('');
+    setSubmitting(true);
+    try {
+      const gradingData: GradingRequest = {
+        score: gradeNum,
+        feedback: feedback,
+        fileName: selectedSubmission.fileName,
+      };
+      
+      await assessmentService.gradeSubmission(
+        assignmentId,
+        selectedSubmission.studentId,
+        gradingData
+      );
+      
+      // Move submission from pending to graded
+      const gradedSubmission: Submission = {
+        ...selectedSubmission,
+        grade: gradeNum,
+        feedback: feedback,
+        status: 'Graded',
+      };
+      
+      setPendingSubmissions(prev => prev.filter(s => s.id !== selectedSubmission.id));
+      setGradedSubmissions(prev => [...prev, gradedSubmission]);
+      
+      toast.success('Chấm điểm thành công!');
+      setGrade('');
+      setFeedback('');
+      setSelectedSubmission(null);
+      
+      // Select next pending submission if available
+      const remainingPending = pendingSubmissions.filter(s => s.id !== selectedSubmission.id);
+      if (remainingPending.length > 0) {
+        setSelectedSubmission(remainingPending[0]);
+      }
+    } catch (err: any) {
+      console.error('Failed to submit grade:', err);
+      toast.error(`Lỗi chấm điểm: ${err.message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const totalSubmissions = pendingSubmissions.length + gradedSubmissions.length;
@@ -129,12 +246,17 @@ export default function AssignmentGrading() {
             {/* Submissions List */}
             <div className="space-y-2">
               {activeTab === 'pending' ? (
+                pendingSubmissions.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-sm">Không có bài nộp chờ chấm điểm</p>
+                  </div>
+                ) : (
                 pendingSubmissions.map((submission) => (
                   <div
                     key={submission.id}
-                    onClick={() => setSelectedStudent(submission.id)}
+                    onClick={() => setSelectedSubmission(submission)}
                     className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                      selectedStudent === submission.id
+                      selectedSubmission?.id === submission.id
                         ? 'bg-blue-50 border border-blue-200'
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
@@ -150,13 +272,19 @@ export default function AssignmentGrading() {
                     </span>
                   </div>
                 ))
+                )
               ) : (
+                gradedSubmissions.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-sm">Chưa có bài nộp nào được chấm điểm</p>
+                  </div>
+                ) : (
                 gradedSubmissions.map((submission) => (
                   <div
                     key={submission.id}
-                    onClick={() => setSelectedStudent(submission.id)}
+                    onClick={() => setSelectedSubmission(submission)}
                     className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                      selectedStudent === submission.id
+                      selectedSubmission?.id === submission.id
                         ? 'bg-blue-50 border border-blue-200'
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
@@ -177,18 +305,31 @@ export default function AssignmentGrading() {
                     </div>
                   </div>
                 ))
+                )
               )}
             </div>
           </div>
 
           {/* Right Content - Grade Submission */}
           <div className="col-span-9 space-y-6">
-            {/* Student Submission Card */}
+            {loading ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+                <p className="text-gray-600">Đang tải...</p>
+              </div>
+            ) : !selectedSubmission ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+                <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-gray-600">Chọn một bài nộp để chấm điểm</p>
+              </div>
+            ) : (
+            /* Student Submission Card */
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Grade Submission</h3>
-                  <p className="text-sm text-gray-600">Student: {currentSubmission.studentName}</p>
+                  <p className="text-sm text-gray-600">Student: {selectedSubmission.studentName}</p>
                 </div>
               </div>
 
@@ -196,11 +337,11 @@ export default function AssignmentGrading() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Assignment</p>
-                    <p className="text-base font-medium text-gray-900">{assignmentInfo.title}</p>
+                    <p className="text-base font-medium text-gray-900">{assignmentInfo.title || 'Loading...'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Submitted On</p>
-                    <p className="text-base font-medium text-gray-900">{assignmentInfo.submittedOn}</p>
+                    <p className="text-base font-medium text-gray-900">{selectedSubmission.submittedDate}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Max Score</p>
@@ -216,22 +357,24 @@ export default function AssignmentGrading() {
                     <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span className="font-medium text-gray-900">{currentSubmission.fileName}</span>
+                    <span className="font-medium text-gray-900">{selectedSubmission.fileName || 'No file'}</span>
                   </div>
+                  {selectedSubmission.fileName && (
                   <button className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                     Download
                   </button>
+                  )}
                 </div>
-                <p className="text-sm text-gray-600 mb-4">{currentSubmission.description}</p>
                 <div className="bg-white border border-gray-200 rounded p-4">
-                  <p className="text-sm text-gray-700 italic">{currentSubmission.details}</p>
+                  <p className="text-sm text-gray-700">{selectedSubmission.content || 'Không có nội dung preview'}</p>
                 </div>
               </div>
 
-              {/* Grading Form */}
+              {/* Grading Form - Only show for pending submissions */}
+              {selectedSubmission.status === 'Pending' ? (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-2">
@@ -263,15 +406,36 @@ export default function AssignmentGrading() {
 
                 <button
                   onClick={handleSubmitGrade}
-                  className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="w-full bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Submit Grade
+                  {submitting ? (
+                    <>
+                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Submit Grade
+                    </>
+                  )}
                 </button>
               </div>
+              ) : (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-medium text-green-800 mb-2">Đã chấm điểm</h4>
+                <p className="text-sm text-green-700">Điểm: {selectedSubmission.grade}/100</p>
+                <p className="text-sm text-green-700 mt-1">Feedback: {selectedSubmission.feedback}</p>
+              </div>
+              )}
             </div>
+            )}
           </div>
         </div>
       </main>
